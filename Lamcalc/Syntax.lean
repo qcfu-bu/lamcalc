@@ -54,8 +54,8 @@ lemma up_upren (ξ : Nat -> Nat) :
   apply funext
   intro x
   cases x with
-  | zero => simp [upren, up, ren, scons]
-  | succ n => simp [upren, up, ren, scons]
+  | zero => simp [upren, up, ren, scons, funcomp]
+  | succ n => simp [upren, up, ren, scons, funcomp]
 
 @[simp]
 lemma up_upren_n (ξ : Nat -> Nat) (n : Nat) :
@@ -67,7 +67,7 @@ lemma up_upren_n (ξ : Nat -> Nat) (n : Nat) :
 @[simp]
 lemma rename_subst ξ (m : tm) : rename ξ m = m.[ren ξ] := by
   induction m generalizing ξ with
-  | var x => simp [ren]
+  | var x => simp [ren, funcomp]
   | lam a m ih => simp; rw[ih]
   | app m n ihm ihn =>
     simp
@@ -82,7 +82,7 @@ lemma up_id : @up tm _ _ ids = ids := by
   intro x
   cases x with
   | zero => simp [up, scons]
-  | succ n => simp [up, scons, ren]
+  | succ n => simp [up, scons, ren, funcomp]
 
 @[simp]
 lemma up_id_n n : @upn tm _ _ n ids = ids := by
@@ -102,15 +102,15 @@ lemma id_subst (σ : Nat -> tm) x : (ids x).[σ] = σ x := rfl
 
 @[simp]
 lemma up_comp_ren_subst {T} [Ids T] [Rename T] (ξ : Nat -> Nat) (σ : Nat -> T) :
-  up (σ ∘ ξ) = up σ ∘ upren ξ := by
+  up (ξ @@@ σ) = upren ξ @@@ up σ := by
   apply funext
   intro x
   cases x with
   | zero => rfl
-  | succ n => simp [up, scons, upren]
+  | succ n => simp [up, scons, upren, funcomp]
 
 @[simp]
-lemma ren_subst_comp ξ σ (m : tm) : (rename ξ m).[σ] = m.[σ ∘ ξ] := by
+lemma ren_subst_comp ξ σ (m : tm) : (rename ξ m).[σ] = m.[ξ @@@ σ] := by
   induction m generalizing ξ σ with
   | var x => rfl
   | lam a m ih => simp; rw [<- ih]; simp
@@ -122,19 +122,19 @@ lemma ren_subst_comp ξ σ (m : tm) : (rename ξ m).[σ] = m.[σ ∘ ξ] := by
 
 @[simp]
 lemma up_comp_subst_ren (σ : Nat -> tm) (ξ : Nat -> Nat) :
-  up (rename ξ ∘ σ) = rename (upren ξ) ∘ up σ := by
+  up (σ @@@ rename ξ) = up σ @@@ rename (upren ξ) := by
   apply funext
   intro x
   cases x with
-  | zero => simp [ren]
+  | zero => simp [ren, funcomp]
   | succ n =>
-    simp [up, scons]
+    simp [up, scons, funcomp]
     have h1 := ren_subst_comp Nat.succ (ren (upren ξ)) (σ n); simp at h1
     have h2 := ren_subst_comp ξ (ren Nat.succ) (σ n); simp at h2
     rw [h1, h2]; rfl
 
 @[simp]
-lemma subst_ren_comp σ ξ (m : tm) : rename ξ m.[σ] = m.[rename ξ ∘ σ] := by
+lemma subst_ren_comp σ ξ (m : tm) : rename ξ m.[σ] = m.[σ @@@ rename ξ] := by
   induction m generalizing σ ξ with
   | var x => rfl
   | lam a m ih => simp; rw [<- ih]; simp
@@ -145,22 +145,22 @@ lemma subst_ren_comp σ ξ (m : tm) : rename ξ m.[σ] = m.[rename ξ ∘ σ] :=
   | unit => rfl
 
 @[simp]
-lemma up_comp (σ τ : Nat -> tm) : up (τ ∘ σ) = up τ ∘ up σ := by
+lemma up_comp (σ τ : Nat -> tm) : up (σ @@ τ) = up σ @@ up τ := by
   apply funext
   intro x
   cases x with
-  | zero => simp [scomp]
+  | zero => simp [scomp, funcomp]
   | succ n =>
-    simp [up, scons, scomp]
+    simp [up, scons, scomp, funcomp]
     rw [<- up]
     have h1 := subst_ren_comp τ Nat.succ (σ n); simp at h1
     have h2 := ren_subst_comp Nat.succ (up τ) (σ n); simp at h2
     rw [h1, h2]; rfl
 
 @[simp]
-lemma subst_comp (σ τ : Nat -> tm) m : m.[σ].[τ] = m.[τ ∘ σ] := by
+lemma subst_comp (σ τ : Nat -> tm) m : m.[σ].[τ] = m.[σ @@ τ] := by
   induction m generalizing σ τ with
-  | var x => simp [scomp]
+  | var x => simp [scomp, funcomp]
   | lam a m ih => simp; rw [ih]
   | app m n ihm ihn =>
     simp; constructor
@@ -170,11 +170,11 @@ lemma subst_comp (σ τ : Nat -> tm) m : m.[σ].[τ] = m.[τ ∘ σ] := by
 
 @[simp]
 lemma up_comp_subst (m : tm) (σ : Nat -> tm) :
-  (m.[σ] .: ids) ∘ up σ =  σ ∘ (m .: ids) := by
+  up σ @@ (m.[σ] .: ids) = (m .: ids) @@ σ := by
   apply funext; intro x
   cases x with
-  | zero => simp [scomp, scons]
+  | zero => simp [scomp, funcomp, scons]
   | succ n =>
-    simp [scomp, scons, up]
-    have h : subst (m.[σ] .: ids) ∘ ren Nat.succ = ids := rfl
+    simp [scomp, funcomp, scons, up]
+    have h : ren Nat.succ @@@ subst (m.[σ] .: ids) = ids := rfl
     rw [h]; simp
