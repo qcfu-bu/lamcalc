@@ -169,3 +169,14 @@ lemma subst_comp (σ τ : Nat -> tm) m : m.[σ].[τ] = m.[σ @@ τ] := by
     . apply ihm
     . apply ihn
   | unit => rfl
+
+@[simp]
+lemma up_comp_subst (m : tm) (σ : Nat -> tm) :
+  up σ @@ (m.[σ] .: ids) = (m .: ids) @@ σ := by
+  apply funext; intro x
+  cases x with
+  | zero => simp [scomp, funcomp, scons]
+  | succ n =>
+    simp [scomp, funcomp, scons, up]
+    have h : ren Nat.succ @@@ subst (m.[σ] .: ids) = ids := rfl
+    rw [h]; simp

@@ -2,7 +2,9 @@ import Lake
 open Lake DSL
 
 package «lamcalc» where
-  -- add package configuration options here
+  leanOptions := #[
+    ⟨`autoImplicit, false⟩,
+    ⟨`relaxedAutoImplicit, false⟩]
 
 @[default_target]
 lean_lib «Lamcalc» where
