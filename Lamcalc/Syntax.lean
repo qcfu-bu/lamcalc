@@ -17,7 +17,6 @@ instance : Ids tm where
 lemma ids_var x : tm.var x = ids x := rfl
 
 def tm.rename (ξ : Nat -> Nat) (m : tm) : tm :=
-  open tm in
   match m with
   | var x => var (ξ x)
   | lam a m => lam a (rename (upren ξ) m)
@@ -34,7 +33,6 @@ lemma rename_unit ξ : rename ξ (tm.unit) = tm.unit := rfl
 attribute [simp] rename_ids rename_lam rename_app rename_unit
 
 def tm.subst (σ : Nat -> tm) (m : tm) : tm :=
-  open tm in
   match m with
   | var x => σ x
   | lam a m => lam a (subst (up σ) m)
@@ -44,7 +42,7 @@ def tm.subst (σ : Nat -> tm) (m : tm) : tm :=
 instance : Subst tm where
   subst := tm.subst
 
-lemma subst_ids σ x : @subst tm _ σ (ids x) = σ x := rfl
+lemma subst_ids (σ : Nat -> tm) x : subst σ (ids x) = σ x := rfl
 lemma subst_lam σ a m : subst σ (tm.lam a m) = tm.lam a (subst (up σ) m) := rfl
 lemma subst_app σ m n : subst σ (tm.app m n) = tm.app (subst σ m) (subst σ n) := rfl
 lemma subst_unit σ : subst σ tm.unit = tm.unit := rfl
