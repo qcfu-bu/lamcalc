@@ -9,7 +9,7 @@ lemma pstep_subst {m n} σ : m ≈> n -> m.[σ] ≈> n.[σ] := by
   induction ps generalizing σ <;> clear m n
   case pstep_var x => aesop
   case pstep_lam a m m' _ ih =>
-    simp; constructor ; aesop
+    simp; constructor; aesop
   case pstep_app m m' n n' _ _ ih1 ih2 =>
     simp; constructor <;> aesop
   case pstep_beta a m m' n n' _ _ ih1 ih2 =>
