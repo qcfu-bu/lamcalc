@@ -27,7 +27,7 @@ lemma psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
   cases x with
   | zero => simp; constructor
   | succ n =>
-    simp [up, scons, funcomp]
+    simp [up, scons]
     apply pstep_subst; apply h
 
 lemma pstep_compat {m n σ τ} :

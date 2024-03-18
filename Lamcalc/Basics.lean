@@ -13,30 +13,26 @@ export Ids (ids)
 export Rename (rename)
 export Subst (subst)
 
-def funcomp {A B C} (f : A -> B) (g : B -> C) : A -> C :=
-  fun x => g (f x)
-
 def scons {T} (s : T) (σ : Nat -> T) : Nat -> T
   | 0 => s
   | x+1 => σ x
 
-def scomp {T} [Subst T] (f g : Nat -> T) : Nat -> T :=
-  funcomp f (subst g)
+def scomp {T} [Subst T] (g f : Nat -> T) : Nat -> T :=
+  (subst g) ∘ f
 
-infixl:56 " @@ " => scomp
-infixl:56 " @@@ " => funcomp
+infixl:56 " ∘ " => scomp
 infixr:55 " .: " => scons
 notation:max s:2 ".[" σ:2 "]" => subst σ s
 notation:max s:2 ".[" t:2 "/]" => subst (t .: ids) s
 
 def upren (ξ : Nat -> Nat) : Nat -> Nat :=
-  0 .: ξ @@@ Nat.succ
+  0 .: Nat.succ ∘ ξ
 
 def ren {T} [Ids T] (ξ : Nat -> Nat) : Nat -> T :=
-  ξ @@@ ids
+  ids ∘ ξ
 
 def up {T} [Ids T] [Rename T] (σ : Nat -> T) : Nat -> T :=
-  ids 0 .: σ @@@ rename Nat.succ
+  ids 0 .: rename Nat.succ ∘ σ
 
 def upn {T} [Ids T] [Rename T] (n : Nat) : (Nat -> T) -> Nat -> T :=
   up^[n]
@@ -47,7 +43,7 @@ lemma upn0 {T} [Ids T] [Rename T] σ : @upn T _ _ 0 σ = σ := rfl
 lemma upn1 {T} [Ids T] [Rename T] (n : Nat) σ : @upn T _ _ (n + 1) σ = upn n (up σ) := rfl
 attribute [simp] upren0 up0 upn0 upn1
 
-lemma id_comp {A B} (f : A -> B) : id @@@ f = f := by rfl
-lemma comp_id {A B} (f : A -> B) : f @@@ id = f := by rfl
-lemma comp_assoc {A B C D} (f : A -> B) (g : B -> C) (h : C -> D) :
-  (f @@@ g) @@@ h = f @@@ (g @@@ h) := by rfl
+lemma id_comp {A B} (f : A -> B) : f ∘ id = f := by rfl
+lemma comp_id {A B} (f : A -> B) : id ∘ f = f := by rfl
+lemma comp_assoc {A B C D} (f : C -> D) (g : B -> C) (h : A -> B) :
+  f ∘ (g ∘ h) = (f ∘ g) ∘ h := by rfl
