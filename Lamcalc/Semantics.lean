@@ -1,21 +1,20 @@
 import Lamcalc.Syntax
+import Lamcalc.ARS
 
 @[aesop safe [constructors, cases]]
-inductive pstep : tm -> tm -> Prop where
-| pstep_var x :
-  pstep (ids x) (ids x)
-| pstep_lam a {m m'} :
-  pstep m m' ->
-  pstep (tm.lam a m) (tm.lam a m')
-| pstep_app {m m' n n'} :
-  pstep m m' ->
-  pstep n n' ->
-  pstep (tm.app m n) (tm.app m' n')
-| pstep_beta a {m m' n n'} :
-  pstep m m' ->
-  pstep n n' ->
-  pstep (tm.app (tm.lam a m) n) (m'.[n'/])
-| pstep_unit :
-  pstep tm.unit tm.unit
+inductive step : tm -> tm -> Prop where
+| step_lam a {m m'} :
+  step m m' ->
+  step (.lam a m) (.lam a m')
+| step_appM {m m' n} :
+  step m m' ->
+  step (.app m n) (.app m' n)
+| step_appN {m n n'} :
+  step n n' ->
+  step (.app m n) (.app m n')
+| step_beta a {m n} :
+  step (.app (.lam a m) n) (m.[n/])
 
-infix:50 " ≈> " => pstep
+infix:50 " ~> " => step
+infix:50 " ~>* " => ARS.star step
+infix:50 " === " => ARS.conv step
