@@ -1,7 +1,6 @@
 import Lamcalc.Syntax
 import Lamcalc.ARS
 
-@[aesop safe [constructors, cases]]
 inductive step : tm -> tm -> Prop where
 | step_lam a {m m'} :
   step m m' ->

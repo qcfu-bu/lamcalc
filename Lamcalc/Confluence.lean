@@ -1,7 +1,6 @@
 import Lamcalc.Semantics
 open ARS
 
-@[aesop safe [constructors, cases]]
 inductive pstep : tm -> tm -> Prop where
 | pstep_var x :
   pstep (ids x) (ids x)
@@ -23,7 +22,7 @@ infix:50 " ≈> " => pstep
 
 def sred (σ τ : Nat -> tm) := ∀ x, (σ x) ~>* (τ x)
 
-lemma step_subst σ {m n} : m ~> n -> m.[σ] ~> n.[σ] := by
+theorem step_subst σ {m n} : m ~> n -> m.[σ] ~> n.[σ] := by
   intro st
   induction st generalizing σ <;> clear m n
   case step_lam a m m' _ ih =>
@@ -36,19 +35,19 @@ lemma step_subst σ {m n} : m ~> n -> m.[σ] ~> n.[σ] := by
     simp; constructor
     apply ih
   case step_beta a m n =>
-    simp
-    rw [<-up_comp_subst]
-    rw [<-subst_comp]
-    apply step.step_beta
+    asimp
+    have h := @step.step_beta a m.[up σ] n.[σ]
+    asimp at h
+    assumption
 
-lemma red_lam {a m m'} :
+theorem red_lam {a m m'} :
   m ~>* m' -> .lam a m ~>* .lam a m' := by
   intro r
   apply star.hom (tm.lam a) _ r
   intros x y
   apply step.step_lam
 
-lemma red_app {m m' n n'} :
+theorem red_app {m m' n n'} :
   m ~>* m' -> n ~>* n' -> .app m n ~>* .app m' n' := by
   intros r1 r2
   apply (@star.trans _ _ (tm.app m' n))
@@ -59,44 +58,46 @@ lemma red_app {m m' n n'} :
     intros x y
     apply step.step_appN
 
-lemma red_subst {m n} σ : m ~>* n -> m.[σ] ~>* n.[σ] := by
+theorem red_subst {m n} σ : m ~>* n -> m.[σ] ~>* n.[σ] := by
   intro r
   induction r with
-  | R => aesop
+  | R => constructor
   | SE _ st ih =>
     apply star.trans ih
     apply star.singleton
     apply step_subst _ st
 
-lemma sred_up {σ τ} : sred σ τ -> sred (up σ) (up τ) := by
+theorem sred_up {σ τ} : sred σ τ -> sred (up σ) (up τ) := by
   intros h x
   cases x with
-  | zero => simp; aesop
+  | zero => simp; constructor
   | succ n =>
+
     simp [up, funcomp, scons]
+
     apply red_subst _ (h n)
 
-lemma red_compat {σ τ} m : sred σ τ -> m.[σ] ~>* m.[τ] := by
+theorem red_compat {σ τ} m : sred σ τ -> m.[σ] ~>* m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
     simp; intro h
     apply h
   | lam a m ih =>
-    simp; intro h
+    asimp; intro h
     apply red_lam (ih (sred_up h))
   | app m n ihm ihn =>
-    simp; intro h
+    asimp; intro h
     apply red_app (ihm h) (ihn h)
-  | unit => intro _; aesop
+  | unit => intro _; constructor
 
 def sconv (σ τ : Nat -> tm) := ∀ x, σ x === τ x
 
-lemma conv_lam {a m m'} :
+theorem conv_lam {a m m'} :
   m === m' -> tm.lam a m === tm.lam a m' := by
   intros r; apply conv.hom _ _ r
   intros x y; apply step.step_lam
 
-lemma conv_app {m m' n n'} :
+theorem conv_app {m m' n n'} :
   m === m' -> n === n' -> tm.app m n === tm.app m' n' := by
   intros r1 r2
   apply @conv.trans _ _ (tm.app m' n)
@@ -107,54 +108,72 @@ lemma conv_app {m m' n n'} :
     intros x y
     apply step.step_appN
 
-lemma conv_subst σ {m n} : m === n -> m.[σ] === n.[σ] := by
+theorem conv_subst σ {m n} : m === n -> m.[σ] === n.[σ] := by
   intros r
   apply conv.hom _ _ r
   apply step_subst
 
-lemma sconv_up {σ τ} : sconv σ τ -> sconv (up σ) (up τ) := by
+theorem sconv_up {σ τ} : sconv σ τ -> sconv (up σ) (up τ) := by
   intros h x
   cases x with
-  | zero => simp; aesop
+  | zero => simp; constructor
   | succ n =>
-    simp [up, funcomp, scons]
+    asimp
     apply conv_subst _ (h n)
 
-lemma conv_compat {σ τ} m : sconv σ τ -> m.[σ] === m.[τ] := by
+theorem conv_compat {σ τ} m : sconv σ τ -> m.[σ] === m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
     simp; intro h; apply h
   | lam a m ih =>
-    simp; intro h
+    asimp; intro h
     apply conv_lam (ih (sconv_up h))
   | app m n ihm ihn =>
     simp; intro h
     apply conv_app (ihm h) (ihn h)
-  | unit => simp; aesop
+  | unit =>
+    simp; intro h
+    constructor
 
-lemma conv_beta {m n1 n2} : n1 === n2 -> m.[n1/] === m.[n2/] := by
+theorem conv_beta {m n1 n2} : n1 === n2 -> m.[n1/] === m.[n2/] := by
   intro h; apply conv_compat
   intro x
   cases x with
-  | zero => simp [scons]; assumption
-  | succ n => simp [scons]; aesop
+  | zero => simp; assumption
+  | succ n => simp; constructor
 
-@[aesop safe]
-lemma pstep_refl {m} : m ≈> m := by
-  induction m <;> aesop
+theorem pstep_refl {m} : m ≈> m := by
+  induction m with
+  | var => constructor
+  | lam a m ih =>
+    constructor
+    assumption
+  | app =>
+    constructor <;>
+    assumption
+  | unit => constructor
 
-lemma step_pstep {m m'} : m ~> m' -> m ≈> m' := by
+theorem step_pstep {m m'} : m ~> m' -> m ≈> m' := by
   intro st
   induction st with
   | step_lam a _ ih => constructor; assumption
-  | step_appM _ ih => constructor <;> aesop
-  | step_appN _ ih => constructor <;> aesop
-  | step_beta a => constructor <;> aesop
+  | step_appM _ ih =>
+    constructor
+    . assumption
+    . exact pstep_refl
+  | step_appN _ ih =>
+    constructor
+    . exact pstep_refl
+    . assumption
+  | step_beta a =>
+    constructor
+    . exact pstep_refl
+    . exact pstep_refl
 
-lemma pstep_red {m n} : m ≈> n -> m ~>* n := by
+theorem pstep_red {m n} : m ≈> n -> m ~>* n := by
   intro ps
   induction ps <;> clear m n
-  case pstep_var x => aesop
+  case pstep_var x => constructor
   case pstep_lam a m m' _ ih =>
     apply red_lam ih
   case pstep_app m m' n n' _ _ ihm ihn =>
@@ -164,72 +183,87 @@ lemma pstep_red {m n} : m ≈> n -> m ~>* n := by
     . apply red_app (red_lam ihm) ihn
     . apply star.singleton
       apply step.step_beta
-  case pstep_unit => aesop
+  case pstep_unit => constructor
 
-lemma pstep_subst {m n} σ : m ≈> n -> m.[σ] ≈> n.[σ] := by
+theorem pstep_subst {m n} σ : m ≈> n -> m.[σ] ≈> n.[σ] := by
   intro ps
   induction ps generalizing σ <;> clear m n
-  case pstep_var x => aesop
+  case pstep_var x => apply pstep_refl
   case pstep_lam a m m' _ ih =>
-    simp; constructor; aesop
+    asimp; constructor
+    apply ih
   case pstep_app m m' n n' _ _ ih1 ih2 =>
-    simp; constructor <;> aesop
+    simp; constructor
+    apply ih1
+    apply ih2
   case pstep_beta a m m' n n' _ _ ih1 ih2 =>
     have h := pstep.pstep_beta a (ih1 (up σ)) (ih2 σ)
-    aesop
-  case pstep_unit => aesop
+    asimp
+    asimp at h
+    assumption
+  case pstep_unit => constructor
 
 def psstep (σ τ : Nat -> tm) : Prop := forall x, (σ x) ≈> (τ x)
 
-lemma psstep_refl {σ} : psstep σ σ := by
-  intro x; induction x <;> aesop
+theorem psstep_refl {σ} : psstep σ σ := by
+  intro x; induction x <;>
+  apply pstep_refl
 
-lemma psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
+theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
   intro h x
   cases x with
   | zero => simp; constructor
   | succ n =>
-    simp [up, scons, funcomp]
+    asimp
     apply pstep_subst; apply h
 
-lemma pstep_compat {m n σ τ} :
+theorem pstep_compat {m n σ τ} :
   m ≈> n -> psstep σ τ -> m.[σ] ≈> n.[τ] := by
   intro ps; induction ps generalizing σ τ <;> clear m n
-  case pstep_var x => aesop
+  case pstep_var x =>
+    intro h
+    apply h
   case pstep_lam a m m' _ ih =>
-    intro pss; simp; constructor
+    intro pss; asimp; constructor
     apply ih; apply psstep_up; assumption
   case pstep_app m m' n n' _ _ ih1 ih2 =>
-    intro pss; simp; constructor <;> aesop
+    intro pss; simp; constructor
+    apply ih1; assumption
+    apply ih2; assumption
   case pstep_beta a m m' n n' _ _ ih1 ih2 =>
-    intro pss; simp
+    intro pss; asimp
     have h := pstep.pstep_beta a (ih1 (psstep_up pss)) (ih2 pss)
-    aesop
-  case pstep_unit => aesop
+    asimp at h
+    assumption
+  case pstep_unit =>
+    intro; simp; constructor
 
-lemma psstep_compat {m n σ τ} :
+theorem psstep_compat {m n σ τ} :
   psstep σ τ -> m ≈> n -> psstep (m .: σ) (n .: τ) := by
   intros pss ps x
   cases x with
   | zero => assumption
   | succ n => simp [scons]; apply pss
 
-lemma pstep_subst_term {m n n'} : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
+theorem pstep_subst_term {m n n'} : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
   intro ps
   apply pstep_compat pstep_refl
   apply psstep_compat psstep_refl ps
 
-lemma pstep_compat_beta {m m' n n'} :
+theorem pstep_compat_beta {m m' n n'} :
   m ≈> m' -> n ≈> n' -> m.[n/] ≈> m'.[n'/] := by
   intro ps1 ps2
   apply pstep_compat
   . assumption
   . apply psstep_compat psstep_refl ps2
 
-lemma pstep_diamond : diamond pstep := by
+theorem pstep_diamond : diamond pstep := by
   intros m m1 m2 ps; induction ps generalizing m2 <;> clear m m1
   case pstep_var x =>
-    intro ps; exists m2; aesop
+    intro ps; exists m2;
+    constructor
+    assumption
+    apply pstep_refl
   case pstep_lam a m m' _ ih =>
     intro ps0
     cases ps0
@@ -278,9 +312,11 @@ lemma pstep_diamond : diamond pstep := by
   case pstep_unit =>
     intro ps0; cases ps0
     exists tm.unit
-    aesop
+    constructor
+    apply pstep_refl
+    apply pstep_refl
 
-lemma pstep_strip {m m1 m2} :
+theorem pstep_strip {m m1 m2} :
   m ≈> m1 -> m ~>* m2 -> ∃ m', m1 ~>* m' ∧ m2 ≈> m' := by
   intros p r
   induction r generalizing m1 p <;> clear m2
@@ -300,7 +336,9 @@ theorem step_confluent : confluent step := by
   induction r generalizing z <;> clear y
   case R =>
     intro h; exists z
-    constructor <;> aesop
+    constructor
+    assumption
+    constructor
   case SE _ s ih =>
     intro h
     rcases ih h with ⟨z1, ⟨s1 , s2⟩⟩
