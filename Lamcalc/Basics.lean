@@ -46,7 +46,6 @@ def upn {T} [Ids T] [Rename T] (n : Nat) : (Nat -> T) -> Nat -> T :=
 
 @[simp] theorem upren0 (ξ : Nat -> Nat) : upren ξ 0 = 0 := by rfl
 @[simp] theorem up0 {T} [Ids T] [Rename T] (σ : Nat -> T) : up σ 0 = ids 0 := by rfl
-
 @[simp] theorem up1 {T} [Ids T] [Rename T] (σ : Nat -> T) : up σ (n + 1) = rename Nat.succ (σ n) := by rfl
 @[simp] theorem upn0 {T} [Ids T] [Rename T] σ : @upn T _ _ 0 σ = σ := by rfl
 @[simp] theorem upn1 {T} [Ids T] [Rename T] (n : Nat) σ : @upn T _ _ (n + 1) σ = upn n (up σ) := by
