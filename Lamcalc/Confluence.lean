@@ -26,13 +26,13 @@ theorem step_subst σ {m n} : m ~> n -> m.[σ] ~> n.[σ] := by
   intro st
   induction st generalizing σ <;> clear m n
   case step_lam a m m' _ ih =>
-    simp; constructor
+    asimp; constructor
     apply ih
   case step_appM m m' n _ ih =>
-    simp; constructor
+    asimp; constructor
     apply ih
   case step_appN m n n' _ ih =>
-    simp; constructor
+    asimp; constructor
     apply ih
   case step_beta a m n =>
     asimp
@@ -70,17 +70,15 @@ theorem red_subst {m n} σ : m ~>* n -> m.[σ] ~>* n.[σ] := by
 theorem sred_up {σ τ} : sred σ τ -> sred (up σ) (up τ) := by
   intros h x
   cases x with
-  | zero => simp; constructor
+  | zero => asimp; constructor
   | succ n =>
-
-    simp [up, funcomp, scons]
-
+    asimp
     apply red_subst _ (h n)
 
 theorem red_compat {σ τ} m : sred σ τ -> m.[σ] ~>* m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
-    simp; intro h
+    asimp; intro h
     apply h
   | lam a m ih =>
     asimp; intro h
@@ -116,7 +114,7 @@ theorem conv_subst σ {m n} : m === n -> m.[σ] === n.[σ] := by
 theorem sconv_up {σ τ} : sconv σ τ -> sconv (up σ) (up τ) := by
   intros h x
   cases x with
-  | zero => simp; constructor
+  | zero => asimp; constructor
   | succ n =>
     asimp
     apply conv_subst _ (h n)
@@ -124,23 +122,23 @@ theorem sconv_up {σ τ} : sconv σ τ -> sconv (up σ) (up τ) := by
 theorem conv_compat {σ τ} m : sconv σ τ -> m.[σ] === m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
-    simp; intro h; apply h
+    asimp; intro h; apply h
   | lam a m ih =>
     asimp; intro h
     apply conv_lam (ih (sconv_up h))
   | app m n ihm ihn =>
-    simp; intro h
+    asimp; intro h
     apply conv_app (ihm h) (ihn h)
   | unit =>
-    simp; intro h
+    asimp; intro h
     constructor
 
 theorem conv_beta {m n1 n2} : n1 === n2 -> m.[n1/] === m.[n2/] := by
   intro h; apply conv_compat
   intro x
   cases x with
-  | zero => simp; assumption
-  | succ n => simp; constructor
+  | zero => asimp; assumption
+  | succ n => asimp; constructor
 
 theorem pstep_refl {m} : m ≈> m := by
   induction m with
@@ -193,7 +191,7 @@ theorem pstep_subst {m n} σ : m ≈> n -> m.[σ] ≈> n.[σ] := by
     asimp; constructor
     apply ih
   case pstep_app m m' n n' _ _ ih1 ih2 =>
-    simp; constructor
+    asimp; constructor
     apply ih1
     apply ih2
   case pstep_beta a m m' n n' _ _ ih1 ih2 =>
@@ -212,7 +210,7 @@ theorem psstep_refl {σ} : psstep σ σ := by
 theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
   intro h x
   cases x with
-  | zero => simp; constructor
+  | zero => asimp; constructor
   | succ n =>
     asimp
     apply pstep_subst; apply h
@@ -227,7 +225,7 @@ theorem pstep_compat {m n σ τ} :
     intro pss; asimp; constructor
     apply ih; apply psstep_up; assumption
   case pstep_app m m' n n' _ _ ih1 ih2 =>
-    intro pss; simp; constructor
+    intro pss; asimp; constructor
     apply ih1; assumption
     apply ih2; assumption
   case pstep_beta a m m' n n' _ _ ih1 ih2 =>
@@ -236,7 +234,7 @@ theorem pstep_compat {m n σ τ} :
     asimp at h
     assumption
   case pstep_unit =>
-    intro; simp; constructor
+    intro; asimp; constructor
 
 theorem psstep_compat {m n σ τ} :
   psstep σ τ -> m ≈> n -> psstep (m .: σ) (n .: τ) := by
