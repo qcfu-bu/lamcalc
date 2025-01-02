@@ -1,94 +1,86 @@
 import Lamcalc.Basics
 
-inductive ty where
-| arrow : ty -> ty -> ty
-| unit
+inductive Tm where
+  | var : Var -> Tm
+  | srt : Nat -> Tm
+  | pi  : Tm -> Tm -> Tm
+  | lam : Tm -> Tm -> Tm
+  | app : Tm -> Tm -> Tm
 
-inductive tm where
-| var : Var -> tm
-| lam : ty -> tm -> tm
-| app : tm -> tm -> tm
-| unit : tm
+instance : Ids Tm where
+  ids := Tm.var
 
-instance : Ids tm where
-  ids := tm.var
+@[asimp]theorem ids_var x : Tm.var x = ids x := rfl
 
-@[asimp]theorem ids_var x : tm.var x = ids x := rfl
-
-@[asimp]
-def tm.rename (ξ : Var -> Var) (m : tm) : tm :=
+def rename_rec (ξ : Var -> Var) (m : Tm) : Tm :=
   match m with
-  | var x => var (ξ x)
-  | lam a m => lam a (rename (upren ξ) m)
-  | app m n => app (rename ξ m) (rename ξ n)
-  | unit => unit
+  | .var x => .var (ξ x)
+  | .srt i => .srt i
+  | .pi a b => .pi (rename_rec ξ a) (rename_rec (upren ξ) b)
+  | .lam a m => .lam (rename_rec ξ a) (rename_rec (upren ξ) m)
+  | .app m n => .app (rename_rec ξ m) (rename_rec ξ n)
 
-instance : Rename tm where
-  rename := tm.rename
+instance : Rename Tm where
+  rename := rename_rec
 
-@[asimp]theorem rename_ids ξ x : rename ξ (ids x) = @ids tm _ (ξ x) := rfl
-@[asimp]theorem rename_lam ξ a m : rename ξ (tm.lam a m) = tm.lam a (rename (upren ξ) m) := rfl
-@[asimp]theorem rename_app ξ m n : rename ξ (tm.app m n) = tm.app (rename ξ m) (rename ξ n) := rfl
-@[asimp]theorem rename_unit ξ : rename ξ (tm.unit) = tm.unit := rfl
+@[asimp]theorem rename.ids : rename ξ (ids x)      = @ids Tm _ (ξ x) := rfl
+@[asimp]theorem rename.srt : rename ξ (Tm.srt i)   = Tm.srt i := rfl
+@[asimp]theorem rename.pi  : rename ξ (Tm.pi a b)  = Tm.pi (rename ξ a) (rename (upren ξ) b) := rfl
+@[asimp]theorem rename.lam : rename ξ (Tm.lam a m) = Tm.lam (rename ξ a) (rename (upren ξ) m) := rfl
+@[asimp]theorem rename.app : rename ξ (Tm.app m n) = Tm.app (rename ξ m) (rename ξ n) := rfl
 
-def tm.subst (σ : Var -> tm) (m : tm) : tm :=
+def subst_rec (σ : Var -> Tm) (m : Tm) : Tm :=
   match m with
-  | var x => σ x
-  | lam a m => lam a (subst (up σ) m)
-  | app m n => app (subst σ m) (subst σ n)
-  | unit => unit
+  | .var x => σ x
+  | .srt i => .srt i
+  | .pi a b => .pi (subst_rec σ a) (subst_rec (up σ) b)
+  | .lam a m => .lam (subst_rec σ a) (subst_rec (up σ) m)
+  | .app m n => .app (subst_rec σ m) (subst_rec σ n)
 
-instance : Subst tm where
-  subst := tm.subst
+instance : Subst Tm where
+  subst := subst_rec
 
-@[asimp]theorem subst_ids (σ : Var -> tm) x : subst σ (ids x) = σ x := by rfl
-@[asimp]theorem subst_lam σ a m : subst σ (tm.lam a m) = tm.lam a (subst (up σ) m) := by rfl
-@[asimp]theorem subst_app σ m n : subst σ (tm.app m n) = tm.app (subst σ m) (subst σ n) := by rfl
-@[asimp]theorem subst_unit σ : subst σ tm.unit = tm.unit := rfl
+@[asimp]theorem subst.ids : @subst Tm _ σ (ids x) = σ x := rfl
+@[asimp]theorem subst.srt : subst σ (Tm.srt i)    = Tm.srt i := rfl
+@[asimp]theorem subst.pi  : subst σ (Tm.pi a b)   = Tm.pi (subst σ a) (subst (up σ) b) := rfl
+@[asimp]theorem subst.lam : subst σ (Tm.lam a m)  = Tm.lam (subst σ a) (subst (up σ) m) := rfl
+@[asimp]theorem subst.app : subst σ (Tm.app m n)  = Tm.app (subst σ m) (subst σ n) := rfl
 
 theorem up_upren (ξ : Var -> Var) :
-  @up tm _ _ (ren ξ) = ren (upren ξ) := by
+  @up Tm _ _ (ren ξ) = ren (upren ξ) := by
   funext x; cases x <;> asimp
 
-theorem up_upren_n (ξ : Var -> Var) (n : Var) :
-  @upn tm _ _ n (ren ξ ) = ren (n.repeat upren ξ) := by
-  induction n generalizing ξ with
-  | zero =>
-    asimp[Nat.repeat]
-  | succ n ih =>
-    asimp[Nat.repeat]
-    rw [<-up_upren]
-    rw [<-ih]
-
-theorem tm.rename_subst ξ (m : tm) : rename ξ m = m.[ren ξ] := by
+theorem rename_subst ξ (m : Tm) : rename ξ m = m.[ren ξ] := by
   induction m generalizing ξ with
-  | var x => simp[asimp]
-  | lam a m ih =>
-    asimp[up_upren]; rw[ih]
+  | var => asimp
+  | srt => asimp
+  | pi a b iha ihb =>
+    asimp[up_upren, iha, ihb]
+  | lam a m iha ihm =>
+    asimp[up_upren, iha, ihm]
   | app m n ihm ihn =>
     asimp
     constructor
     . apply ihm
     . apply ihn
-  | _ => asimp
 
-theorem up_ids : up ids = @ids tm _ := by
+theorem up_ids : up ids = @ids Tm _ := by
   funext x
   cases x with
   | zero => asimp
   | succ => asimp
 
-theorem tm.subst_id (m : tm) :
-  m.[ids] = m := by
+theorem subst_id (m : Tm) : m.[ids] = m := by
   induction m with
-  | var x => asimp
-  | lam a m ih =>
-    asimp[up_ids]
-    assumption
+  | var => asimp
+  | srt => asimp
+  | pi a b iha ihb =>
+    asimp[up_ids, iha, ihb]
+  | lam a m iha ihm =>
+    asimp[up_ids, iha, ihm]
   | app m n ih1 ih2 =>
     asimp
     constructor <;> assumption
-  | unit => asimp
 
 theorem up_comp_ren_subst {T} [Ids T] [Rename T] (ξ : Var -> Var) (σ : Var -> T) :
   up (ξ >>> σ) = upren ξ >>> up σ := by
@@ -97,73 +89,71 @@ theorem up_comp_ren_subst {T} [Ids T] [Rename T] (ξ : Var -> Var) (σ : Var -> 
   | zero => rfl
   | succ => asimp
 
-theorem ren_subst_comp ξ σ (m : tm) : m.[ren ξ].[σ] = m.[ξ >>> σ] := by
+theorem ren_subst_comp ξ σ (m : Tm) : m.[ren ξ].[σ] = m.[ξ >>> σ] := by
   induction m generalizing ξ σ with
-  | var x => rfl
-  | lam a m ih =>
-    asimp[up_comp_ren_subst]
-    rw [<- ih]
-    simp [up_upren]
+  | var => rfl
+  | srt => rfl
+  | pi a b iha ihb =>
+    asimp[up_upren, up_comp_ren_subst, iha, ihb]
+  | lam a m iha ihm =>
+    asimp[up_upren, up_comp_ren_subst, iha, ihm]
   | app m n ihm ihn =>
     asimp; constructor
-    . rw [<- ihm]
-    . rw [<- ihn]
-  | unit => asimp
+    . rw[<-ihm]
+    . rw[<-ihn]
 
-theorem up_comp_subst_ren (σ : Var -> tm) (ξ : Var -> Var) :
-  up (σ >>> rename ξ) = up σ >>> rename (upren ξ) := by
+theorem up_comp_subst_ren (σ : Var -> Tm) (ξ : Var -> Var) :
+  up σ >>> rename (upren ξ) = up (σ >>> rename ξ)  := by
   funext x
   cases x with
   | zero => asimp
   | succ n =>
-    asimp[rename, tm.rename_subst]
+    asimp[rename_subst]
     have h1 := ren_subst_comp Nat.succ (ren (upren ξ)) (σ n); asimp at h1
     have h2 := ren_subst_comp ξ (ren Nat.succ) (σ n); asimp at h2
-    rw [h1, h2]; rfl
+    rw[h1, h2]; rfl
 
-theorem subst_ren_comp σ ξ (m : tm) : m.[σ].[ren ξ] = m.[σ >>> rename ξ] := by
+theorem subst_ren_comp σ ξ (m : Tm) : m.[σ].[ren ξ] = m.[σ >>> rename ξ] := by
   induction m generalizing σ ξ with
-  | var x =>
-    asimp[rename, tm.rename_subst]
-  | lam a m ih =>
-    asimp;
-    rw [up_upren]
-    rw [ih]
-    rw [<- up_comp_subst_ren]
+  | var => asimp[rename_subst]
+  | srt => asimp
+  | pi a b iha ihb =>
+    asimp[up_upren, up_comp_subst_ren, iha, ihb]
+  | lam a m iha ihm =>
+    asimp[up_upren, up_comp_subst_ren, iha, ihm]
   | app m n ihm ihn =>
     asimp; constructor
-    . rw [<- ihm]
-    . rw [<- ihn]
-  | unit => rfl
+    . rw[<-ihm]
+    . rw[<-ihn]
 
-theorem up_comp (σ τ : Var -> tm) : up (σ >> τ) = up σ >> up τ := by
+theorem up_comp (σ τ : Var -> Tm) :  up σ >> up τ = up (σ >> τ) := by
   apply funext
   intro x
   cases x with
   | zero =>
     asimp
   | succ n =>
-    asimp[rename, tm.rename_subst]
+    asimp[rename_subst]
     have h1 := subst_ren_comp τ Nat.succ (σ n)
     have h2 := ren_subst_comp Nat.succ (up τ) (σ n)
-    rw [h1, h2]
+    rw[h1, h2]
     rfl
 
-theorem tm.subst_comp (σ τ : Var -> tm) m : m.[σ].[τ] = m.[σ >> τ] := by
+theorem subst_comp (σ τ : Var -> Tm) m : m.[σ].[τ] = m.[σ >> τ] := by
   induction m generalizing σ τ with
-  | var x => asimp
-  | lam a m ih =>
-    asimp
-    rw [ih]
-    rw [<-up_comp]
+  | var => asimp
+  | srt => asimp
+  | pi a b iha ihb =>
+    asimp[up_comp, iha, ihb]
+  | lam a m iha ihm =>
+    asimp[up_comp, iha, ihm]
   | app m n ihm ihn =>
     asimp; constructor
     . apply ihm
     . apply ihn
-  | unit => rfl
 
-instance : SubstLemmas tm where
-  rename_subst := tm.rename_subst
-  subst_id := tm.subst_id
+instance : SubstLemmas Tm where
+  rename_subst := rename_subst
+  subst_id := subst_id
   id_subst := by intros; asimp
-  subst_comp := tm.subst_comp
+  subst_comp := subst_comp

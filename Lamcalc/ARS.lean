@@ -10,135 +10,135 @@ attribute [reducible] Pred Rel
 
 variable {T : Type} (e : Rel T)
 
-inductive star (x : T) : T -> Prop where
-| R : star x x
-| SE {y z} : star x y -> e y z -> star x z
+inductive Star (x : T) : T -> Prop where
+| R : Star x x
+| SE {y z} : Star x y -> e y z -> Star x z
 
-inductive conv (x : T) : T -> Prop where
-| R : conv x x
-| SE  {y z} : conv x y -> e y z -> conv x z
-| SEi {y z} : conv x y -> e z y -> conv x z
+inductive Conv (x : T) : T -> Prop where
+| R : Conv x x
+| SE  {y z} : Conv x y -> e y z -> Conv x z
+| SEi {y z} : Conv x y -> e z y -> Conv x z
 
-def com (R S : Rel T) := ∀ {x y z}, R x y -> S x z -> ∃ u, S y u ∧ R z u
-def joinable (R : Rel T) x y := ∃ z, R x z ∧ R y z
-def diamond := ∀ {x y z}, e x y -> e x z -> ∃ u, e y u ∧ e z u
-def confluent := ∀ {x y z}, star e x y -> star e x z -> joinable (star e) y z
-def CR := ∀ {x y}, conv e x y -> joinable (star e) x y
+def Com (R S : Rel T) := ∀ {x y z}, R x y -> S x z -> ∃ u, S y u ∧ R z u
+def Joinable (R : Rel T) x y := ∃ z, R x z ∧ R y z
+def Diamond := ∀ {x y z}, e x y -> e x z -> ∃ u, e y u ∧ e z u
+def Confluent := ∀ {x y z}, Star e x y -> Star e x z -> Joinable (Star e) y z
+def CR := ∀ {x y}, Conv e x y -> Joinable (Star e) x y
 end ars_def
 
 section ars_lemmas
 variable {T : Type} {e : Rel T}
 
-theorem star.singleton {x y} : e x y -> star e x y := by
+theorem Star.singleton {x y} : e x y -> Star e x y := by
   intro h
-  apply star.SE
-  apply star.R
+  apply Star.SE
+  apply Star.R
   assumption
 
-theorem star.trans {y x z} : star e x y -> star e y z -> star e x z := by
+theorem Star.trans {y x z} : Star e x y -> Star e y z -> Star e x z := by
   intros h1 h2
   induction h2 with
   | R => exact h1
-  | SE _ rel ih => apply star.SE ih rel
+  | SE _ rel ih => apply Star.SE ih rel
 
-theorem star.ES {x y z} : e x y -> star e y z -> star e x z := by
+theorem Star.ES {x y z} : e x y -> Star e y z -> Star e x z := by
   intro h
-  apply star.trans
-  apply star.singleton
+  apply Star.trans
+  apply Star.singleton
   assumption
 
-theorem star.conv {x y} : star e x y -> conv e x y := by
+theorem Star.Conv {x y} : Star e x y -> Conv e x y := by
   intro h
   induction h with
   | R => constructor
-  | SE _ rel ih => apply conv.SE ih rel
+  | SE _ rel ih => apply Conv.SE ih rel
 
-theorem star.img {T1 T2} {f : T1 -> T2} {e1 e2} :
-  (∀ {x y}, e1 x y -> star e2 (f x) (f y)) ->
-  (∀ {x y}, star e1 x y -> star e2 (f x) (f y)) := by
+theorem Star.img {T1 T2} {f : T1 -> T2} {e1 e2} :
+  (∀ {x y}, e1 x y -> Star e2 (f x) (f y)) ->
+  (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
   intros h1 x y h2
   induction h2 with
   | R => constructor
-  | @SE y z _ rel ih => apply star.trans ih (h1 rel)
+  | @SE y z _ rel ih => apply Star.trans ih (h1 rel)
 
-theorem star.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
+theorem Star.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
   (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
-  (∀ {x y}, star e1 x y -> star e2 (f x) (f y)) := by
-  intro h; apply star.img
+  (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
+  intro h; apply Star.img
   intros x y h0
   specialize h h0
-  apply star.singleton h
+  apply Star.singleton h
 
-theorem star.closure {T} {e1 e2 : Rel T} : e1 <=2 star e2 -> star e1 <=2 star e2 := by
-  apply star.img
+theorem Star.closure {T} {e1 e2 : Rel T} : e1 <=2 Star e2 -> Star e1 <=2 Star e2 := by
+  apply Star.img
 
-theorem star.monotone {T} {e1 e2 : Rel T} : e1 <=2 e2 -> star e1 <=2 star e2 := by
-  intro h1; apply star.closure
+theorem Star.monotone {T} {e1 e2 : Rel T} : e1 <=2 e2 -> Star e1 <=2 Star e2 := by
+  intro h1; apply Star.closure
   intros x y h2
   specialize h1 h2
-  apply star.singleton h1
+  apply Star.singleton h1
 
-theorem conv.singleton {x y} : e x y -> conv e x y := by
-  intro h; apply conv.SE conv.R h
+theorem Conv.singleton {x y} : e x y -> Conv e x y := by
+  intro h; apply Conv.SE Conv.R h
 
-theorem conv.singletoni {x y} : e y x -> conv e x y := by
-  intro h; apply conv.SEi conv.R h
+theorem Conv.singletoni {x y} : e y x -> Conv e x y := by
+  intro h; apply Conv.SEi Conv.R h
 
-theorem conv.trans {y x z} : conv e x y -> conv e y z -> conv e x z := by
+theorem Conv.trans {y x z} : Conv e x y -> Conv e y z -> Conv e x z := by
   intros h1 h2
   induction h2 with
   | R => exact h1
-  | SE _ rel ih => apply conv.SE ih rel
-  | SEi _ rel ih => apply conv.SEi ih rel
+  | SE _ rel ih => apply Conv.SE ih rel
+  | SEi _ rel ih => apply Conv.SEi ih rel
 
-theorem conv.ES {x y z} : e x y -> conv e y z -> conv e x z := by
+theorem Conv.ES {x y z} : e x y -> Conv e y z -> Conv e x z := by
   intro h
-  apply conv.trans
-  apply conv.singleton
+  apply Conv.trans
+  apply Conv.singleton
   assumption
 
-theorem conv.ESi {x y z} : e y x -> conv e y z -> conv e x z := by
+theorem Conv.ESi {x y z} : e y x -> Conv e y z -> Conv e x z := by
   intro h
-  apply conv.trans
-  apply conv.singletoni
+  apply Conv.trans
+  apply Conv.singletoni
   assumption
 
-theorem conv.sym {x y} : conv e x y -> conv e y x := by
+theorem Conv.sym {x y} : Conv e x y -> Conv e y x := by
   intro h
   induction h with
   | R => constructor
-  | SE _ rel ih => apply conv.ESi rel ih
-  | SEi _ rel ih => apply conv.ES rel ih
+  | SE _ rel ih => apply Conv.ESi rel ih
+  | SEi _ rel ih => apply Conv.ES rel ih
 
-theorem conv.join {x y z} : star e x y -> star e z y -> conv e x z := by
+theorem Conv.join {x y z} : Star e x y -> Star e z y -> Conv e x z := by
   intro h1 h2
-  apply conv.trans
-  apply star.conv h1
-  apply conv.sym
-  apply star.conv h2
+  apply Conv.trans
+  apply Star.Conv h1
+  apply Conv.sym
+  apply Star.Conv h2
 
-theorem conv.img {T1 T2} {f : T1 -> T2} {e1 e2} :
-  (∀ {x y}, e1 x y -> conv e2 (f x) (f y)) ->
-  (∀ {x y}, conv e1 x y -> conv e2 (f x) (f y)) := by
+theorem Conv.img {T1 T2} {f : T1 -> T2} {e1 e2} :
+  (∀ {x y}, e1 x y -> Conv e2 (f x) (f y)) ->
+  (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
   intros h1 x y h2
   induction h2 with
   | R => constructor
   | SE _ rel ih =>
-    apply conv.trans ih (h1 rel)
+    apply Conv.trans ih (h1 rel)
   | SEi _ rel ih =>
-    apply conv.trans ih
-    apply conv.sym
+    apply Conv.trans ih
+    apply Conv.sym
     apply h1 rel
 
-theorem conv.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
+theorem Conv.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
   (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
-  (∀ {x y}, conv e1 x y -> conv e2 (f x) (f y)) := by
-  intro h; apply conv.img
+  (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
+  intro h; apply Conv.img
   intros x y h0
   specialize h h0
-  apply conv.singleton h
+  apply Conv.singleton h
 
-theorem confluent_cr : confluent e <-> CR e := by
+theorem Confluent.cr : Confluent e <-> CR e := by
   constructor
   . intro h1 x y h2
     induction h2 with
@@ -147,22 +147,22 @@ theorem confluent_cr : confluent e <-> CR e := by
       constructor <;> constructor
     | @SE y z _ rel ih =>
       rcases ih with ⟨u, ⟨h2, h3⟩⟩
-      rcases h1 h3 (star.singleton rel) with ⟨v, ⟨h4, h5⟩⟩
+      rcases h1 h3 (Star.singleton rel) with ⟨v, ⟨h4, h5⟩⟩
       exists v; constructor
-      . apply star.trans h2 h4
+      . apply Star.trans h2 h4
       . apply h5
     | @SEi y z _ rel ih =>
       rcases ih with ⟨u, ⟨h2, h3⟩⟩
       exists u; constructor
       . apply h2
-      . apply star.ES rel h3
+      . apply Star.ES rel h3
   . intro h x y z  h1 h2
-    have h1 := star.conv h1
-    have h2 := star.conv h2
+    have h1 := Star.Conv h1
+    have h2 := Star.Conv h2
     apply h
-    apply conv.trans (conv.sym h1) h2
+    apply Conv.trans (Conv.sym h1) h2
 
-theorem com.strip {e1 e2 : Rel T} : com e1 e2 -> com (star e2) e1 := by
+theorem Com.strip {e1 e2 : Rel T} : Com e1 e2 -> Com (Star e2) e1 := by
   intros h1 x y z h2
   induction h2 with
   | R =>
@@ -177,14 +177,14 @@ theorem com.strip {e1 e2 : Rel T} : com e1 e2 -> com (star e2) e1 := by
     rcases h1 rel1 rel2 with ⟨v, ⟨rel2, rel1⟩⟩
     exists v; constructor
     . assumption
-    . apply star.SE h3 rel2
+    . apply Star.SE h3 rel2
 
-theorem com.lift {e1 e2 : Rel T} : com e1 e2 -> com (star e1) (star e2) := by
+theorem Com.lift {e1 e2 : Rel T} : Com e1 e2 -> Com (Star e1) (Star e2) := by
   intro h
-  have h := @com.strip _ e1 e2 h
-  have h := @com.strip _ (star e2) e1 h
+  have h := @Com.strip _ e1 e2 h
+  have h := @Com.strip _ (Star e2) e1 h
   assumption
 
-theorem diamond_confluent : diamond e -> confluent e := by
-  apply com.lift
+theorem Diamond.confluent : Diamond e -> Confluent e := by
+  apply Com.lift
 end ars_lemmas

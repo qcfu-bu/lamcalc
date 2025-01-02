@@ -1,71 +1,94 @@
 import Lamcalc.Semantics
 open ARS
 
-inductive pstep : tm -> tm -> Prop where
-| pstep_var x :
-  pstep (ids x) (ids x)
-| pstep_lam a {m m'} :
-  pstep m m' ->
-  pstep (.lam a m) (.lam a m')
-| pstep_app {m m' n n'} :
-  pstep m m' ->
-  pstep n n' ->
-  pstep (.app m n) (.app m' n')
-| pstep_beta a {m m' n n'} :
-  pstep m m' ->
-  pstep n n' ->
-  pstep (.app (.lam a m) n) (m'.[n'/])
-| pstep_unit :
-  pstep .unit .unit
+inductive PStep : Tm -> Tm -> Prop where
+| var x :
+  PStep (ids x) (ids x)
+| srt i :
+  PStep (.srt i) (.srt i)
+| pi {a a' b b'} :
+  PStep a a' ->
+  PStep b b' ->
+  PStep (.pi a b) (.pi a' b')
+| lam {a a' m m'} :
+  PStep a a' ->
+  PStep m m' ->
+  PStep (.lam a m) (.lam a' m')
+| app {m m' n n'} :
+  PStep m m' ->
+  PStep n n' ->
+  PStep (.app m n) (.app m' n')
+| beta a {m m' n n'} :
+  PStep m m' ->
+  PStep n n' ->
+  PStep (.app (.lam a m) n) (m'.[n'/])
 
-infix:50 " ≈> " => pstep
+infix:50 " ≈> " => PStep
 
-def sred (σ τ : Nat -> tm) := ∀ x, (σ x) ~>* (τ x)
+def sred (σ τ : Nat -> Tm) := ∀ x, (σ x) ~>* (τ x)
 
-theorem step_subst σ {m n} : m ~> n -> m.[σ] ~> n.[σ] := by
+theorem step_subst : m ~> n -> m.[σ] ~> n.[σ] := by
   intro st
-  induction st generalizing σ <;> clear m n
-  case step_lam a m m' _ ih =>
-    asimp; constructor
-    apply ih
-  case step_appM m m' n _ ih =>
-    asimp; constructor
-    apply ih
-  case step_appN m n n' _ ih =>
-    asimp; constructor
-    apply ih
-  case step_beta a m n =>
+  induction st generalizing σ with
+  | piA b st ih =>
+    asimp; constructor; apply ih
+  | piB a st ih =>
+    asimp; constructor; apply ih
+  | lamA m st ih =>
+    asimp; constructor; apply ih
+  | lamM a st ih =>
+    asimp; constructor; apply ih
+  | appM n st ih =>
+    asimp; constructor; apply ih
+  | appN m st ih =>
+    asimp; constructor; apply ih
+  | beta a m n =>
     asimp
-    have h := @step.step_beta a m.[up σ] n.[σ]
+    have h := Step.beta a.[σ] m.[up σ] n.[σ]
     asimp at h
     assumption
 
-theorem red_lam {a m m'} :
-  m ~>* m' -> .lam a m ~>* .lam a m' := by
-  intro r
-  apply star.hom (tm.lam a) _ r
-  intros x y
-  apply step.step_lam
+theorem red_pi :
+  a ~>* a' -> b ~>* b' -> .pi a b ~>* .pi a' b' := by
+  intro ra rb
+  apply (@Star.trans _ _ (Tm.pi a' b))
+  . apply Star.hom _ _ ra
+    intro x y
+    apply Step.piA
+  . apply Star.hom _ _ rb
+    intro x y
+    apply Step.piB
 
-theorem red_app {m m' n n'} :
+theorem red_lam :
+  a ~>* a' -> m ~>* m' -> .lam a m ~>* .lam a' m' := by
+  intro ra rm
+  apply (@Star.trans _ _ (Tm.lam a' m))
+  . apply Star.hom _ _ ra
+    intro x y
+    apply Step.lamA
+  . apply Star.hom _ _ rm
+    intro x y
+    apply Step.lamM
+
+theorem red_app :
   m ~>* m' -> n ~>* n' -> .app m n ~>* .app m' n' := by
   intros r1 r2
-  apply (@star.trans _ _ (tm.app m' n))
-  . apply star.hom (tm.app · n) _ r1
-    intros x y; simp
-    apply step.step_appM
-  . apply star.hom _ _ r2
+  apply (@Star.trans _ _ (Tm.app m' n))
+  . apply Star.hom _ _ r1
     intros x y
-    apply step.step_appN
+    apply Step.appM
+  . apply Star.hom _ _ r2
+    intros x y
+    apply Step.appN
 
-theorem red_subst {m n} σ : m ~>* n -> m.[σ] ~>* n.[σ] := by
+theorem red_subst : m ~>* n -> m.[σ] ~>* n.[σ] := by
   intro r
   induction r with
   | R => constructor
   | SE _ st ih =>
-    apply star.trans ih
-    apply star.singleton
-    apply step_subst _ st
+    apply Star.trans ih
+    apply Star.singleton
+    apply step_subst st
 
 theorem sred_up {σ τ} : sred σ τ -> sred (up σ) (up τ) := by
   intros h x
@@ -73,139 +96,196 @@ theorem sred_up {σ τ} : sred σ τ -> sred (up σ) (up τ) := by
   | zero => asimp; constructor
   | succ n =>
     asimp
-    apply red_subst _ (h n)
+    apply red_subst (h n)
 
-theorem red_compat {σ τ} m : sred σ τ -> m.[σ] ~>* m.[τ] := by
+theorem red_compat : sred σ τ -> m.[σ] ~>* m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
     asimp; intro h
     apply h
-  | lam a m ih =>
+  | srt i =>
     asimp; intro h
-    apply red_lam (ih (sred_up h))
+    constructor
+  | pi a b iha ihb =>
+    asimp; intro h
+    apply red_pi
+    . apply iha; assumption
+    . apply ihb
+      apply sred_up
+      assumption
+  | lam a m iha ihm =>
+    asimp; intro h
+    apply red_lam
+    . apply iha; assumption
+    . apply ihm
+      apply sred_up
+      assumption
   | app m n ihm ihn =>
     asimp; intro h
     apply red_app (ihm h) (ihn h)
-  | unit => intro _; constructor
 
-def sconv (σ τ : Nat -> tm) := ∀ x, σ x === τ x
+def sconv (σ τ : Nat -> Tm) := ∀ x, σ x === τ x
 
-theorem conv_lam {a m m'} :
-  m === m' -> tm.lam a m === tm.lam a m' := by
-  intros r; apply conv.hom _ _ r
-  intros x y; apply step.step_lam
+theorem conv_pi :
+  a === a' -> b === b' -> .pi a b === .pi a' b' := by
+  intros ra rb
+  apply @Conv.trans _ _ (Tm.pi a' b)
+  . apply Conv.hom _ _ ra
+    intro x y
+    apply Step.piA
+  . apply Conv.hom _ _ rb
+    intro x y
+    apply Step.piB
 
-theorem conv_app {m m' n n'} :
-  m === m' -> n === n' -> tm.app m n === tm.app m' n' := by
+theorem conv_lam :
+  a === a' -> m === m' -> .lam a m === .lam a' m' := by
+  intros ra rm
+  apply @Conv.trans _ _ (Tm.lam a' m)
+  . apply Conv.hom _ _ ra
+    intro x y
+    apply Step.lamA
+  . apply Conv.hom _ _ rm
+    intro x y
+    apply Step.lamM
+
+theorem conv_app :
+  m === m' -> n === n' -> .app m n === .app m' n' := by
   intros r1 r2
-  apply @conv.trans _ _ (tm.app m' n)
-  . apply conv.hom (tm.app · n) _ r1
-    intros x y; simp
-    apply step.step_appM
-  . apply conv.hom _ _ r2
+  apply @Conv.trans _ _ (Tm.app m' n)
+  . apply Conv.hom _ _ r1
     intros x y
-    apply step.step_appN
+    apply Step.appM
+  . apply Conv.hom _ _ r2
+    intros x y
+    apply Step.appN
 
-theorem conv_subst σ {m n} : m === n -> m.[σ] === n.[σ] := by
+theorem conv_subst : m === n -> m.[σ] === n.[σ] := by
   intros r
-  apply conv.hom _ _ r
+  apply Conv.hom _ _ r
+  intros x y
   apply step_subst
 
-theorem sconv_up {σ τ} : sconv σ τ -> sconv (up σ) (up τ) := by
+theorem sconv_up : sconv σ τ -> sconv (up σ) (up τ) := by
   intros h x
   cases x with
   | zero => asimp; constructor
   | succ n =>
     asimp
-    apply conv_subst _ (h n)
+    apply conv_subst (h n)
 
-theorem conv_compat {σ τ} m : sconv σ τ -> m.[σ] === m.[τ] := by
+theorem conv_compat : sconv σ τ -> m.[σ] === m.[τ] := by
   induction m generalizing σ τ with
   | var x =>
     asimp; intro h; apply h
-  | lam a m ih =>
+  | srt i =>
+    asimp; intro h; constructor
+  | pi a b iha ihb =>
     asimp; intro h
-    apply conv_lam (ih (sconv_up h))
+    apply conv_pi
+    . apply iha; assumption
+    . apply ihb
+      apply sconv_up
+      assumption
+  | lam a m iha ihm =>
+    asimp; intro h
+    apply conv_lam
+    . apply iha; assumption
+    . apply ihm
+      apply sconv_up
+      assumption
   | app m n ihm ihn =>
     asimp; intro h
     apply conv_app (ihm h) (ihn h)
-  | unit =>
-    asimp; intro h
-    constructor
 
-theorem conv_beta {m n1 n2} : n1 === n2 -> m.[n1/] === m.[n2/] := by
+theorem conv_beta : n1 === n2 -> m.[n1/] === m.[n2/] := by
   intro h; apply conv_compat
   intro x
   cases x with
   | zero => asimp; assumption
-  | succ n => asimp; constructor
+  | succ => asimp; constructor
 
-theorem pstep_refl {m} : m ≈> m := by
+theorem PStep.refl : m ≈> m := by
   induction m with
   | var => constructor
-  | lam a m ih =>
-    constructor
-    assumption
-  | app =>
-    constructor <;>
-    assumption
-  | unit => constructor
+  | srt => constructor
+  | pi  => constructor <;> assumption
+  | lam => constructor <;> assumption
+  | app => constructor <;> assumption
 
-theorem step_pstep {m m'} : m ~> m' -> m ≈> m' := by
+theorem step_pstep : m ~> m' -> m ≈> m' := by
   intro st
   induction st with
-  | step_lam a _ ih => constructor; assumption
-  | step_appM _ ih =>
+  | piA =>
     constructor
     . assumption
-    . exact pstep_refl
-  | step_appN _ ih =>
+    . exact PStep.refl
+  | piB =>
     constructor
-    . exact pstep_refl
+    . exact PStep.refl
     . assumption
-  | step_beta a =>
+  | lamA =>
     constructor
-    . exact pstep_refl
-    . exact pstep_refl
+    . assumption
+    . exact PStep.refl
+  | lamM =>
+    constructor
+    . exact PStep.refl
+    . assumption
+  | appM =>
+    constructor
+    . assumption
+    . exact PStep.refl
+  | appN =>
+    constructor
+    . exact PStep.refl
+    . assumption
+  | beta =>
+    constructor
+    . exact PStep.refl
+    . exact PStep.refl
 
-theorem pstep_red {m n} : m ≈> n -> m ~>* n := by
+theorem pstep_red : m ≈> n -> m ~>* n := by
   intro ps
-  induction ps <;> clear m n
-  case pstep_var x => constructor
-  case pstep_lam a m m' _ ih =>
-    apply red_lam ih
-  case pstep_app m m' n n' _ _ ihm ihn =>
-    apply red_app ihm ihn
-  case pstep_beta a m m' n n' _ _ ihm ihn =>
-    apply star.trans
-    . apply red_app (red_lam ihm) ihn
-    . apply star.singleton
-      apply step.step_beta
-  case pstep_unit => constructor
+  induction ps with
+  | var => constructor
+  | srt => constructor
+  | pi => apply red_pi <;> assumption
+  | lam => apply red_lam <;> assumption
+  | app => apply red_app <;> assumption
+  | @beta _ _ _ _ a stm stn ihm ihn =>
+    apply Star.trans
+    . apply red_app (red_lam Star.R ihm) ihn
+    . apply Star.singleton
+      apply Step.beta
 
-theorem pstep_subst {m n} σ : m ≈> n -> m.[σ] ≈> n.[σ] := by
+theorem pstep_subst : m ≈> n -> m.[σ] ≈> n.[σ] := by
   intro ps
-  induction ps generalizing σ <;> clear m n
-  case pstep_var x => apply pstep_refl
-  case pstep_lam a m m' _ ih =>
+  induction ps generalizing σ with
+  | var => exact PStep.refl
+  | srt => exact PStep.refl
+  | pi sta stb iha ihb =>
     asimp; constructor
-    apply ih
-  case pstep_app m m' n n' _ _ ih1 ih2 =>
+    . exact iha
+    . exact ihb
+  | lam sta stm iha ihm =>
     asimp; constructor
-    apply ih1
-    apply ih2
-  case pstep_beta a m m' n n' _ _ ih1 ih2 =>
-    have h := pstep.pstep_beta a (ih1 (up σ)) (ih2 σ)
+    . exact iha
+    . exact ihm
+  | app stm stn ihm ihn =>
+    asimp; constructor
+    . exact ihm
+    . exact ihn
+  | beta a _ _ ihm ihn =>
+    have h := PStep.beta a.[σ] (@ihm (up σ)) (@ihn σ)
     asimp
     asimp at h
     assumption
-  case pstep_unit => constructor
 
-def psstep (σ τ : Nat -> tm) : Prop := forall x, (σ x) ≈> (τ x)
+def psstep (σ τ : Nat -> Tm) : Prop := forall x, (σ x) ≈> (τ x)
 
 theorem psstep_refl {σ} : psstep σ σ := by
   intro x; induction x <;>
-  apply pstep_refl
+  apply PStep.refl
 
 theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
   intro h x
@@ -217,24 +297,29 @@ theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
 
 theorem pstep_compat {m n σ τ} :
   m ≈> n -> psstep σ τ -> m.[σ] ≈> n.[τ] := by
-  intro ps; induction ps generalizing σ τ <;> clear m n
-  case pstep_var x =>
-    intro h
-    apply h
-  case pstep_lam a m m' _ ih =>
-    intro pss; asimp; constructor
-    apply ih; apply psstep_up; assumption
-  case pstep_app m m' n n' _ _ ih1 ih2 =>
-    intro pss; asimp; constructor
-    apply ih1; assumption
-    apply ih2; assumption
-  case pstep_beta a m m' n n' _ _ ih1 ih2 =>
+  intro ps; induction ps generalizing σ τ with
+  | var => intro pss; apply pss
+  | srt => intro; asimp; apply PStep.refl
+  | pi sta stb iha ihb =>
+    intro; asimp
+    constructor
+    . apply iha; assumption
+    . apply ihb; apply psstep_up; assumption
+  | lam sta stm iha ihm =>
+    intro; asimp
+    constructor
+    . apply iha; assumption
+    . apply ihm; apply psstep_up; assumption
+  | app stm stn ihm ihn =>
+    intro; asimp
+    constructor
+    . apply ihm; assumption
+    . apply ihn; assumption
+  | beta a _ _ ihm ihn =>
     intro pss; asimp
-    have h := pstep.pstep_beta a (ih1 (psstep_up pss)) (ih2 pss)
+    have h := PStep.beta a.[σ] (ihm (psstep_up pss)) (ihn pss)
     asimp at h
     assumption
-  case pstep_unit =>
-    intro; asimp; constructor
 
 theorem psstep_compat {m n σ τ} :
   psstep σ τ -> m ≈> n -> psstep (m .: σ) (n .: τ) := by
@@ -245,7 +330,7 @@ theorem psstep_compat {m n σ τ} :
 
 theorem pstep_subst_term {m n n'} : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
   intro ps
-  apply pstep_compat pstep_refl
+  apply pstep_compat PStep.refl
   apply psstep_compat psstep_refl ps
 
 theorem pstep_compat_beta {m m' n n'} :
@@ -255,64 +340,77 @@ theorem pstep_compat_beta {m m' n n'} :
   . assumption
   . apply psstep_compat psstep_refl ps2
 
-theorem pstep_diamond : diamond pstep := by
-  intros m m1 m2 ps; induction ps generalizing m2 <;> clear m m1
-  case pstep_var x =>
-    intro ps; exists m2;
+theorem pstep_diamond : Diamond PStep := by
+  intros m m1 m2 ps
+  induction ps generalizing m2 with
+  | var =>
+    intro ps; exists m2
     constructor
-    assumption
-    apply pstep_refl
-  case pstep_lam a m m' _ ih =>
-    intro ps0
-    cases ps0
-    case pstep_lam m0 p =>
-    have ⟨n, ⟨ps1, ps2⟩⟩ := ih p
-    exists (tm.lam a n)
+    . assumption
+    . exact PStep.refl
+  | srt i =>
+    intro ps; exists m2
     constructor
-    . constructor; assumption
-    . constructor; assumption
-  case pstep_app m m' n n' ps1 _ ih1 ih2 =>
-    intro ps0; cases ps0
-    case pstep_app m1 m2 p1 p2 =>
-      have ⟨n1, ⟨ps11, ps12⟩⟩ := ih1 p1
-      have ⟨n2, ⟨ps21, ps22⟩⟩ := ih2 p2
-      exists (tm.app n1 n2)
+    . assumption
+    . exact PStep.refl
+  | pi _ _ iha ihb =>
+    intro ps
+    cases ps with
+    | pi psa psb =>
+      have ⟨a, ⟨psa1, psa2⟩⟩ := iha psa
+      have ⟨b, ⟨psb1, psb2⟩⟩ := ihb psb
+      exists .pi a b
       constructor
       . constructor <;> assumption
       . constructor <;> assumption
-    case pstep_beta a m1 m2 n1 p1 p2 =>
-      cases ps1; case pstep_lam m3 ps1 =>
-      have ⟨m4, ⟨p3, p4⟩⟩ := ih1 (pstep.pstep_lam a p1)
-      have ⟨Z, ⟨p5, p6⟩⟩ := ih2 p2
-      cases p3; case pstep_lam X pX =>
-      cases p4; case pstep_lam pY =>
-        exists X.[Z/]
-        constructor
-        . apply pstep.pstep_beta <;> assumption
-        . apply pstep_compat_beta <;> assumption
-  case pstep_beta a m m' n n' _ _ ih1 ih2 =>
-    intro ps0; cases ps0
-    case pstep_app m1 m2 p1 p2 =>
-      cases p1; case pstep_lam m3 p3 =>
-      have ⟨X, ⟨p4, p5⟩⟩ := ih1 p3
-      have ⟨Y, ⟨p6, p7⟩⟩ := ih2 p2
-      exists (X.[Y/])
+  | lam _ _ iha ihm =>
+    intro ps
+    cases ps with
+    | lam psa psm =>
+      have ⟨a, ⟨psa1, psa2⟩⟩ := iha psa
+      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
+      exists .lam a m
+      constructor
+      . constructor <;> assumption
+      . constructor <;> assumption
+  | app psm psn ihm ihn =>
+    intro ps
+    cases ps with
+    | app psm psn =>
+      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
+      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      exists .app m n
+      constructor
+      . constructor <;> assumption
+      . constructor <;> assumption
+    | beta a psm' psn' =>
+      cases psm; case lam _ _ psa psm  =>
+      have ⟨_, ⟨psm1, psm2⟩⟩ := ihm (PStep.lam PStep.refl psm')
+      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn'
+      cases psm1; case lam m _ psm1 =>
+      cases psm2; case lam _ psm2 =>
+      exists m.[n/]
+      constructor
+      . apply PStep.beta <;> assumption
+      . apply pstep_compat_beta <;> assumption
+  | beta _ _ _ ihm ihn =>
+    intro ps
+    cases ps with
+    | app psm psn =>
+      cases psm; case lam _ psm =>
+      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
+      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      exists m.[n/]
       constructor
       . apply pstep_compat_beta <;> assumption
-      . apply pstep.pstep_beta <;> assumption
-    case pstep_beta m1 m2 p1 p2 =>
-      have ⟨X, ⟨p3, p4⟩⟩ := ih1 p1
-      have ⟨Y, ⟨p5, p6⟩⟩ := ih2 p2
-      exists (X.[Y/])
+      . apply PStep.beta <;> assumption
+    | beta _ psm psn =>
+      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
+      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      exists m.[n/]
       constructor
       . apply pstep_compat_beta <;> assumption
       . apply pstep_compat_beta <;> assumption
-  case pstep_unit =>
-    intro ps0; cases ps0
-    exists tm.unit
-    constructor
-    apply pstep_refl
-    apply pstep_refl
 
 theorem pstep_strip {m m1 m2} :
   m ≈> m1 -> m ~>* m2 -> ∃ m', m1 ~>* m' ∧ m2 ≈> m' := by
@@ -320,16 +418,16 @@ theorem pstep_strip {m m1 m2} :
   induction r generalizing m1 p <;> clear m2
   case R =>
     exists m1; constructor
-    . apply star.R
+    . apply Star.R
     . assumption
   case SE _ s1 ih =>
     rcases ih p with ⟨m2, ⟨r, s2⟩⟩
     rcases pstep_diamond (step_pstep s1) s2 with ⟨m3, ⟨p1, p2⟩⟩
     exists m3; constructor
-    . apply star.trans r (pstep_red p2)
+    . apply Star.trans r (pstep_red p2)
     . assumption
 
-theorem step_confluent : confluent step := by
+theorem step_confluent : Confluent Step := by
   intros x y z r
   induction r generalizing z <;> clear y
   case R =>
@@ -343,4 +441,4 @@ theorem step_confluent : confluent step := by
     rcases pstep_strip (step_pstep s) s1 with ⟨z2, ⟨s3, s4⟩⟩
     exists z2; constructor
     . assumption
-    . apply star.trans s2 (pstep_red s4)
+    . apply Star.trans s2 (pstep_red s4)

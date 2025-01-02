@@ -1,19 +1,29 @@
 import Lamcalc.Syntax
 import Lamcalc.ARS
+open ARS
 
-inductive step : tm -> tm -> Prop where
-| step_lam a {m m'} :
-  step m m' ->
-  step (.lam a m) (.lam a m')
-| step_appM {m m' n} :
-  step m m' ->
-  step (.app m n) (.app m' n)
-| step_appN {m n n'} :
-  step n n' ->
-  step (.app m n) (.app m n')
-| step_beta a {m n} :
-  step (.app (.lam a m) n) (m.[n/])
+inductive Step : Tm -> Tm -> Prop where
+| piA {a a'} b :
+  Step a a' ->
+  Step (.pi a b) (.pi a' b)
+| piB a {b b'} :
+  Step b b' ->
+  Step (.pi a b) (.pi a b')
+| lamA {a a'} m :
+  Step a a' ->
+  Step (.lam a m) (.lam a' m)
+| lamM a {m m'} :
+  Step m m' ->
+  Step (.lam a m) (.lam a m')
+| appM {m m'} n :
+  Step m m' ->
+  Step (.app m n) (.app m' n)
+| appN m {n n'} :
+  Step n n' ->
+  Step (.app m n) (.app m n')
+| beta a m n :
+  Step (.app (.lam a m) n) (m.[n/])
 
-infix:50 " ~> " => step
-infix:50 " ~>* " => ARS.star step
-infix:50 " === " => ARS.conv step
+infix:50 " ~> " => Step
+infix:50 " ~>* " => Star Step
+infix:50 " === " => Conv Step

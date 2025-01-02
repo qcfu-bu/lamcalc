@@ -5,6 +5,7 @@ import Lamcalc.Attr
 section Definitions
 
 abbrev Var := Nat
+@[reducible]def Binder (T : Type) : Type := T
 
 class Ids (T : Type) where
   ids : Var -> T
@@ -78,28 +79,21 @@ section Definitions
 
 -------------------------------------------------------------------------------------------------
 
-section Lemmas
-
 class SubstLemmas (T : Type) [Ids T] [Rename T] [Subst T] where
   rename_subst (ξ : Var -> Var) (m : T) : rename ξ m = m.[ren ξ]
   subst_id (m : T) : m.[ids] = m
   id_subst (σ : Var -> T) (x : Var) : (ids x).[σ] = σ x
   subst_comp (σ τ : Var -> T) (s : T) : s.[σ].[τ] = s.[σ >> τ]
 
+namespace Lemmas
+
 set_option linter.unusedSectionVars false
 variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
 
-@[asimp]theorem rename_subst :
-  ∀ (ξ : Var -> Var) (m : T), rename ξ m = m.[ren ξ] := lemmas.rename_subst
-
-@[asimp]theorem subst_id :
-  ∀ (m : T), m.[ids] = m := lemmas.subst_id
-
-@[asimp]theorem id_subst :
-  ∀ (σ : Var -> T) (x : Var), (ids x).[σ] = σ x := lemmas.id_subst
-
-@[asimp]theorem subst_comp :
-  ∀ (σ τ : Var -> T) (s : T), s.[σ].[τ] = s.[σ >> τ] := lemmas.subst_comp
+@[asimp]def rename_subst := lemmas.rename_subst
+@[asimp]def subst_id     := lemmas.subst_id
+@[asimp]def id_subst     := lemmas.id_subst
+@[asimp]def subst_comp   := lemmas.subst_comp
 
 @[asimp]theorem up_shift (σ : Var -> T) :
   up σ = ids 0 .: (σ >> shift) := by
@@ -148,8 +142,6 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
   funext x
   simp[scomp, funcomp, asimp]
 
-end Lemmas
-
 syntax "asimp" ("[" ident,+ "]")? ("at" ident)? : tactic
 macro_rules
 | `(tactic| asimp) =>
@@ -160,3 +152,5 @@ macro_rules
   `(tactic| simp[asimp] at $h:ident; repeat rw [<-up_shift] at $h:ident)
 | `(tactic| asimp[$[$x:ident],*] at $h:ident) =>
   `(tactic| simp[$[$x:ident],*, asimp] at $h:ident; repeat rw [<-up_shift] at $h:ident)
+
+end Lemmas
