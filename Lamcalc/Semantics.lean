@@ -24,6 +24,8 @@ inductive Step : Tm -> Tm -> Prop where
 | beta a m n :
   Step (.app (.lam a m) n) (m.[n/])
 
+@[reducible]def star_step := Star Step
+@[reducible]def conv_step := Conv Step
 infix:50 " ~> " => Step
-infix:50 " ~>* " => Star Step
-infix:50 " === " => Conv Step
+infix:50 " ~>* " => star_step
+infix:50 " === " => conv_step
