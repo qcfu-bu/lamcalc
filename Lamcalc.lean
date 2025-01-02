@@ -6,3 +6,5 @@ import Lamcalc.Basics
 import Lamcalc.Syntax
 import Lamcalc.Semantics
 import Lamcalc.Confluence
+import Lamcalc.Context
+import Lamcalc.Typed
