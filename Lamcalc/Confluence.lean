@@ -283,11 +283,11 @@ theorem pstep_subst : m ≈> n -> m.[σ] ≈> n.[σ] := by
 
 def psstep (σ τ : Nat -> Tm) : Prop := forall x, (σ x) ≈> (τ x)
 
-theorem psstep_refl {σ} : psstep σ σ := by
+theorem psstep_refl : psstep σ σ := by
   intro x; induction x <;>
   apply PStep.refl
 
-theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
+theorem psstep_up : psstep σ τ -> psstep (up σ) (up τ) := by
   intro h x
   cases x with
   | zero => asimp; constructor
@@ -295,7 +295,7 @@ theorem psstep_up {σ τ} : psstep σ τ -> psstep (up σ) (up τ) := by
     asimp
     apply pstep_subst; apply h
 
-theorem pstep_compat {m n σ τ} :
+theorem pstep_compat :
   m ≈> n -> psstep σ τ -> m.[σ] ≈> n.[τ] := by
   intro ps; induction ps generalizing σ τ with
   | var => intro pss; apply pss
@@ -321,19 +321,19 @@ theorem pstep_compat {m n σ τ} :
     asimp at h
     assumption
 
-theorem psstep_compat {m n σ τ} :
+theorem psstep_compat :
   psstep σ τ -> m ≈> n -> psstep (m .: σ) (n .: τ) := by
   intros pss ps x
   cases x with
   | zero => assumption
   | succ n => simp [scons]; apply pss
 
-theorem pstep_subst_term {m n n'} : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
+theorem pstep_subst_term : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
   intro ps
   apply pstep_compat PStep.refl
   apply psstep_compat psstep_refl ps
 
-theorem pstep_compat_beta {m m' n n'} :
+theorem pstep_compat_beta :
   m ≈> m' -> n ≈> n' -> m.[n/] ≈> m'.[n'/] := by
   intro ps1 ps2
   apply pstep_compat
@@ -412,7 +412,7 @@ theorem pstep_diamond : Diamond PStep := by
       . apply pstep_compat_beta <;> assumption
       . apply pstep_compat_beta <;> assumption
 
-theorem pstep_strip {m m1 m2} :
+theorem pstep_strip :
   m ≈> m1 -> m ~>* m2 -> ∃ m', m1 ~>* m' ∧ m2 ≈> m' := by
   intros p r
   induction r generalizing m1 p <;> clear m2
