@@ -76,8 +76,7 @@ theorem Typed.rename :
   intro ty
   induction ty
   using Typed.rec (motive_2 := fun Γ _ => ∀ Γ' ξ, AgreeRen ξ Γ Γ' -> Wf Γ')
-  generalizing ξ Γ'
-  with
+  generalizing ξ Γ' with
   | srt wf ih =>
     intro; asimp; constructor
     apply ih; assumption
