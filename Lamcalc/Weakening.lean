@@ -31,16 +31,16 @@ theorem AgreeRen.has :
     intro h
     cases h <;> asimp
     case zero =>
-      have e : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
-      rw[e]; constructor
+      have : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
+      rw[this]; constructor
     case succ x a hs =>
-      have e : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
-      rw[e]; constructor
+      have : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
+      rw[this]; constructor
       apply ih; assumption
   | @wk _ a _ ξ _ _ _ ih =>
     intro h; asimp
-    have e : a.[@ren Tm _ (ξ >>> Nat.succ)] = a.[ren ξ].[shift] := by asimp; rfl
-    rw[e]; constructor
+    have : a.[@ren Tm _ (ξ >>> Nat.succ)] = a.[ren ξ].[shift] := by asimp; rfl
+    rw[this]; constructor
     apply ih; assumption
 
 theorem AgreeRen.wf_nil : AgreeRen ξ [] Γ' -> Wf Γ' := by
