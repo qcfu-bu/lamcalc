@@ -3,9 +3,9 @@ import Lamcalc.Syntax
 abbrev Ctx := List Tm
 
 inductive Has : Ctx -> Var -> Tm -> Prop where
-  | zero Γ a :
+  | zero :
     Has (a :: Γ) 0 a.[shift]
-  | succ Γ a b x :
+  | succ :
     Has Γ x a ->
     Has (b :: Γ) x.succ a.[shift]
 

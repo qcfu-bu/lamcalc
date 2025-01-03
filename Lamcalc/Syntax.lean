@@ -7,44 +7,46 @@ inductive Tm where
   | lam : Tm -> Tm -> Tm
   | app : Tm -> Tm -> Tm
 
-instance : Ids Tm where
-  ids := Tm.var
+namespace Tm
 
-@[asimp]theorem ids_var x : Tm.var x = ids x := rfl
+instance : Ids Tm where
+  ids := var
+
+@[asimp]theorem ids_var x : var x = ids x := rfl
 
 def rename_rec (ξ : Var -> Var) (m : Tm) : Tm :=
   match m with
-  | .var x => .var (ξ x)
-  | .srt i => .srt i
-  | .pi a b => .pi (rename_rec ξ a) (rename_rec (upren ξ) b)
-  | .lam a m => .lam (rename_rec ξ a) (rename_rec (upren ξ) m)
-  | .app m n => .app (rename_rec ξ m) (rename_rec ξ n)
+  | var x => var (ξ x)
+  | srt i => srt i
+  | pi a b => pi (rename_rec ξ a) (rename_rec (upren ξ) b)
+  | lam a m => lam (rename_rec ξ a) (rename_rec (upren ξ) m)
+  | app m n => app (rename_rec ξ m) (rename_rec ξ n)
 
 instance : Rename Tm where
   rename := rename_rec
 
-@[asimp]theorem rename.ids : rename ξ (ids x)      = @ids Tm _ (ξ x) := rfl
-@[asimp]theorem rename.srt : rename ξ (Tm.srt i)   = Tm.srt i := rfl
-@[asimp]theorem rename.pi  : rename ξ (Tm.pi a b)  = Tm.pi (rename ξ a) (rename (upren ξ) b) := rfl
-@[asimp]theorem rename.lam : rename ξ (Tm.lam a m) = Tm.lam (rename ξ a) (rename (upren ξ) m) := rfl
-@[asimp]theorem rename.app : rename ξ (Tm.app m n) = Tm.app (rename ξ m) (rename ξ n) := rfl
+@[asimp]theorem rename_ids : rename ξ (ids x)   = @ids Tm _ (ξ x) := rfl
+@[asimp]theorem rename_srt : rename ξ (srt i)   = srt i := rfl
+@[asimp]theorem rename_pi  : rename ξ (pi a b)  = pi (rename ξ a) (rename (upren ξ) b) := rfl
+@[asimp]theorem rename_lam : rename ξ (lam a m) = lam (rename ξ a) (rename (upren ξ) m) := rfl
+@[asimp]theorem rename_app : rename ξ (app m n) = app (rename ξ m) (rename ξ n) := rfl
 
 def subst_rec (σ : Var -> Tm) (m : Tm) : Tm :=
   match m with
-  | .var x => σ x
-  | .srt i => .srt i
-  | .pi a b => .pi (subst_rec σ a) (subst_rec (up σ) b)
-  | .lam a m => .lam (subst_rec σ a) (subst_rec (up σ) m)
-  | .app m n => .app (subst_rec σ m) (subst_rec σ n)
+  | var x => σ x
+  | srt i => srt i
+  | pi a b => pi (subst_rec σ a) (subst_rec (up σ) b)
+  | lam a m => lam (subst_rec σ a) (subst_rec (up σ) m)
+  | app m n => app (subst_rec σ m) (subst_rec σ n)
 
 instance : Subst Tm where
   subst := subst_rec
 
-@[asimp]theorem subst.ids : @subst Tm _ σ (ids x) = σ x := rfl
-@[asimp]theorem subst.srt : subst σ (Tm.srt i)    = Tm.srt i := rfl
-@[asimp]theorem subst.pi  : subst σ (Tm.pi a b)   = Tm.pi (subst σ a) (subst (up σ) b) := rfl
-@[asimp]theorem subst.lam : subst σ (Tm.lam a m)  = Tm.lam (subst σ a) (subst (up σ) m) := rfl
-@[asimp]theorem subst.app : subst σ (Tm.app m n)  = Tm.app (subst σ m) (subst σ n) := rfl
+@[asimp]theorem subst_ids : @subst Tm _ σ (ids x) = σ x := rfl
+@[asimp]theorem subst_srt : subst σ (srt i)    = srt i := rfl
+@[asimp]theorem subst_pi  : subst σ (pi a b)   = pi (subst σ a) (subst (up σ) b) := rfl
+@[asimp]theorem subst_lam : subst σ (lam a m)  = lam (subst σ a) (subst (up σ) m) := rfl
+@[asimp]theorem subst_app : subst σ (app m n)  = app (subst σ m) (subst σ n) := rfl
 
 theorem up_upren (ξ : Var -> Var) :
   @up Tm _ _ (ren ξ) = ren (upren ξ) := by
@@ -157,3 +159,5 @@ instance : SubstLemmas Tm where
   subst_id := subst_id
   id_subst := by intros; asimp
   subst_comp := subst_comp
+
+end Tm

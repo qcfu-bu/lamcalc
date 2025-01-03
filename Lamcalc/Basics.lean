@@ -53,14 +53,24 @@ def upn {T} [Ids T] [Rename T] (n : Var) : (Var -> T) -> Var -> T :=
 
 @[asimp]theorem scomp0 {T} [Subst T] (f g : Var -> T) (x : Var) :
   (f >> g) x = (f x).[g] := by rfl
+
 @[asimp]theorem scons0 {T} (s : T) (σ : Var -> T) : (s .: σ) 0 = s := by rfl
 @[asimp]theorem scons1 {T} (s : T) (σ : Var -> T) (x : Var) : (s .: σ) x.succ = σ x := by rfl
-@[asimp]theorem ren0 {T} [Ids T] (x : Var) (ξ : Var -> Var) : ren ξ x = @ids T _ (ξ x) := by rfl
+
+@[asimp]theorem ren_x {T} [Ids T] (x : Var) (ξ : Var -> Var) : ren ξ x = @ids T _ (ξ x) := by rfl
+@[asimp]theorem ren_id {T} [Ids T] : ren id = @ids T _ := by rfl
+
 @[asimp]theorem upren0 (ξ : Var -> Var) : upren ξ 0 = 0 := by rfl
-@[asimp]theorem upren1 (ξ : Var -> Var) : upren ξ (n + 1) = (ξ >>> Nat.succ) n := by
-  simp[upren, scons]
+@[asimp]theorem upren1 (ξ : Var -> Var) : upren ξ (n + 1) = (ξ >>> Nat.succ) n := by simp[upren, scons]
+@[asimp]theorem upren_id : upren id = id := by
+  funext x
+  cases x with
+  | zero => simp[asimp]
+  | succ => simp[asimp]
+
 @[asimp]theorem up0 {T} [Ids T] [Rename T] (σ : Var -> T) : up σ 0 = ids 0 := by rfl
 @[asimp]theorem up1 {T} [Ids T] [Rename T] (σ : Var -> T) : up σ (n + 1) = rename Nat.succ (σ n) := by rfl
+
 @[asimp]theorem upn0 {T} [Ids T] [Rename T] (σ : Var -> T) : upn 0 σ = σ := by rfl
 @[asimp]theorem upn1 {T} [Ids T] [Rename T] (n : Var) σ : @upn T _ _ (n + 1) σ = up (upn n σ) := by
   simp[upn, Nat.repeat]
@@ -98,6 +108,13 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
 @[asimp]theorem up_shift (σ : Var -> T) :
   up σ = ids 0 .: (σ >> shift) := by
   simp[up, asimp]
+  funext x
+  cases x with
+  | zero => simp[asimp]
+  | succ => simp[shift, scomp, asimp]
+
+@[asimp]theorem upren_up (ξ : Var -> Var) :
+  @ren T _ (upren ξ) = up (ren ξ) := by
   funext x
   cases x with
   | zero => simp[asimp]
@@ -142,7 +159,7 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
   funext x
   simp[scomp, funcomp, asimp]
 
-syntax "asimp" ("[" ident,+ "]")? ("at" ident)? : tactic
+syntax "asimp" ("[" (ident),+ "]")? ("at" ident)? : tactic
 macro_rules
 | `(tactic| asimp) =>
   `(tactic| simp[asimp]; repeat rw [<-up_shift])
