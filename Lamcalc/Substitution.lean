@@ -1,4 +1,4 @@
-import Lamcalc.Weakening
+import Lamcalc.Renaming
 
 inductive AgreeSubst : (Var -> Tm) -> Ctx -> Ctx -> Prop where
   | nil :
@@ -60,12 +60,8 @@ theorem AgreeSubst.has :
     cases hs with
     | zero =>
       apply Typed.conv
-      . apply Conv.subst
-        apply Conv.subst
-        exact eq
-      . apply ih
-        assumption
-        constructor
+      . apply Conv.subst (Conv.subst eq)
+      . apply ih; assumption; constructor
       . assumption
     | succ =>
       apply ih
@@ -97,3 +93,94 @@ theorem AgreeSubst.wf_cons :
   | conv _ _ ty' =>
     intro wf h1 h2
     apply ty'.wf
+
+theorem Typed.substitution :
+    Typed Γ m a -> AgreeSubst σ Γ Γ' -> Typed Γ' m.[σ] a.[σ] := by
+  intro ty
+  induction ty
+  using Typed.rec (motive_2 := fun Γ _ => ∀ Γ' σ, AgreeSubst σ Γ Γ' -> Wf Γ')
+  generalizing Γ' σ with
+  | srt wf ih =>
+    intro agr; asimp
+    constructor
+    apply ih; assumption
+  | var _ _ ih =>
+    intro agr; asimp
+    apply AgreeSubst.has
+    . assumption
+    . apply ih; assumption
+    . assumption
+  | pi tya tyb iha ihb =>
+    intro agr; asimp
+    constructor
+    . apply iha; assumption
+    . apply ihb; constructor <;> assumption
+  | lam tya tym iha ihm =>
+    intro agr; asimp
+    constructor
+    . apply iha; assumption
+    . apply ihm;
+      constructor <;> assumption
+  | app tym tyn ihm ihn =>
+    intro agr; asimp
+    replace ihm := ihm agr; asimp at ihm
+    replace ihn := ihn agr
+    have ty := Typed.app ihm ihn
+    asimp at ty
+    assumption
+  | conv eq tym tyb ihm ihb =>
+    intro agr
+    apply Typed.conv
+    . apply Conv.subst eq
+    . apply ihm; assumption
+    . apply ihb; assumption
+  | nil _ _ agr =>
+    cases agr; constructor
+  | @cons _ _ i wf ty ih1 ih2 Γ' σ agr =>
+    apply AgreeSubst.wf_cons
+    . exact agr
+    . exact ty.wf
+    . exact ih1
+    . intros; exists i
+      apply ih2; assumption
+
+theorem Typed.subst :
+    Typed (a :: Γ) m b ->
+    Typed Γ n a ->
+    Typed Γ m.[n/] b.[n/] := by
+  intro tym tyn
+  apply Typed.substitution
+  . assumption
+  . apply AgreeSubst.wk
+    asimp; assumption
+    exact AgreeSubst.rfl tyn.wf
+
+theorem Typed.esubst :
+    m' = m.[n/] ->
+    b' = b.[n/] ->
+    Typed (a :: Γ) m b ->
+    Typed Γ n a ->
+    Typed Γ m' b' := by
+  intros
+  subst_vars
+  apply Typed.subst <;> assumption
+
+theorem Typed.conv_ctx :
+    b === a ->
+    Typed Γ b (.srt i) ->
+    Typed (a :: Γ) m c ->
+    Typed (b :: Γ) m c := by
+  intro eq tyb tym
+  replace tym : Typed (b :: Γ) m.[ids] c.[ids] := by
+    have wf := tym.wf
+    cases wf; case cons wf tya =>
+    apply Typed.substitution
+    . assumption
+    . apply AgreeSubst.conv <;> try assumption
+      . asimp
+        apply Typed.eweaken <;> try first | rfl | assumption
+        asimp
+      . apply AgreeSubst.rfl <;> constructor <;>
+        assumption
+  asimp at tym
+  exact tym

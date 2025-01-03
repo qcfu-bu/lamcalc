@@ -71,12 +71,12 @@ theorem AgreeRen.wf_cons :
     . exact ty.wf
     . assumption
 
-theorem Typed.rename :
+theorem Typed.renaming :
     Typed Γ m A -> AgreeRen ξ Γ Γ' -> Typed Γ' m.[ren ξ] A.[ren ξ] := by
   intro ty
   induction ty
   using Typed.rec (motive_2 := fun Γ _ => ∀ Γ' ξ, AgreeRen ξ Γ Γ' -> Wf Γ')
-  generalizing ξ Γ' with
+  generalizing Γ' ξ with
   | srt wf ih =>
     intro; asimp; constructor
     apply ih; assumption
@@ -127,14 +127,14 @@ theorem Wf.has_typed : Wf Γ -> Has Γ x a -> ∃ i, Typed Γ a (.srt i) := by
     cases h with
     | zero =>
       exists i
-      apply ty.rename
+      apply ty.renaming
       constructor
       . assumption
       . exact AgreeRen.rfl wf
     | succ hs =>
       have ⟨i, ty⟩ := ih hs
       exists i
-      apply ty.rename
+      apply ty.renaming
       constructor
       . assumption
       . exact AgreeRen.rfl wf
@@ -144,7 +144,7 @@ theorem Typed.weaken :
     Typed Γ b (.srt i) ->
     Typed (b :: Γ) m.[ren .succ] a.[ren .succ] := by
   intro tym tyb
-  apply tym.rename
+  apply tym.renaming
   constructor
   . assumption
   . exact AgreeRen.rfl tym.wf

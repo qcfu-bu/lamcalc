@@ -8,5 +8,5 @@ import Lamcalc.Semantics
 import Lamcalc.Confluence
 import Lamcalc.Context
 import Lamcalc.Typed
-import Lamcalc.Weakening
+import Lamcalc.Renaming
 import Lamcalc.Substitution

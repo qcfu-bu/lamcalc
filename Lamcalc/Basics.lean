@@ -20,7 +20,7 @@ export Ids (ids)
 export Rename (rename)
 export Subst (subst)
 
-@[asimp]def scons {T} (s : T) (σ : Var -> T) : Var -> T
+def scons {T} (s : T) (σ : Var -> T) : Var -> T
   | 0 => s
   | x+1 => σ x
 
