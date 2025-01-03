@@ -12,7 +12,7 @@ inductive AgreeRen : (Var -> Var) -> Ctx -> Ctx -> Prop where
     AgreeRen ξ Γ Γ' ->
     AgreeRen (ξ >>> Nat.succ) Γ (a :: Γ')
 
-theorem AgreeRen.refl : Wf Γ -> AgreeRen id Γ Γ := by
+theorem AgreeRen.rfl : Wf Γ -> AgreeRen id Γ Γ := by
   intro wf
   induction wf using Wf.rec (motive_1 := fun Γ _ _ _ => True)
   all_goals try trivial
@@ -23,7 +23,7 @@ theorem AgreeRen.refl : Wf Γ -> AgreeRen id Γ Γ := by
     assumption
 
 theorem AgreeRen.has :
-  AgreeRen ξ Γ Γ' -> Has Γ x a -> Has Γ' (ξ x) a.[ren ξ] := by
+    AgreeRen ξ Γ Γ' -> Has Γ x a -> Has Γ' (ξ x) a.[ren ξ] := by
   intro agr
   induction agr generalizing x a with
   | nil => intro h; cases h
@@ -53,10 +53,10 @@ theorem AgreeRen.wf_nil : AgreeRen ξ [] Γ' -> Wf Γ' := by
     . assumption
 
 theorem AgreeRen.wf_cons :
-  AgreeRen ξ (a :: Γ) Γ' -> Wf Γ ->
-  (∀ Γ' ξ, AgreeRen ξ Γ Γ' → Wf Γ') ->
-  (∀ Γ' ξ, AgreeRen ξ Γ Γ' → ∃ i, Typed Γ' a.[ren ξ] (.srt i)) ->
-  Wf Γ' := by
+    AgreeRen ξ (a :: Γ) Γ' -> Wf Γ ->
+    (∀ Γ' ξ, AgreeRen ξ Γ Γ' → Wf Γ') ->
+    (∀ Γ' ξ, AgreeRen ξ Γ Γ' → ∃ i, Typed Γ' a.[ren ξ] (.srt i)) ->
+    Wf Γ' := by
   intro agr
   cases agr with
   | cons ty agr =>
@@ -72,7 +72,7 @@ theorem AgreeRen.wf_cons :
     . assumption
 
 theorem Typed.rename :
-  Typed Γ m A -> AgreeRen ξ Γ Γ' -> Typed Γ' m.[ren ξ] A.[ren ξ] := by
+    Typed Γ m A -> AgreeRen ξ Γ Γ' -> Typed Γ' m.[ren ξ] A.[ren ξ] := by
   intro ty
   induction ty
   using Typed.rec (motive_2 := fun Γ _ => ∀ Γ' ξ, AgreeRen ξ Γ Γ' -> Wf Γ')
@@ -115,3 +115,47 @@ theorem Typed.rename :
     . intros
       exists i
       apply ih; assumption
+
+theorem Wf.has_typed : Wf Γ -> Has Γ x a -> ∃ i, Typed Γ a (.srt i) := by
+  intro wf
+  induction wf using Wf.rec (motive_1 := fun _ _ _ _ => True)
+  generalizing x a
+  all_goals try trivial
+  case nil => intro h; cases h
+  case cons _ i wf ty ih _ =>
+    intro h
+    cases h with
+    | zero =>
+      exists i
+      apply ty.rename
+      constructor
+      . assumption
+      . exact AgreeRen.rfl wf
+    | succ hs =>
+      have ⟨i, ty⟩ := ih hs
+      exists i
+      apply ty.rename
+      constructor
+      . assumption
+      . exact AgreeRen.rfl wf
+
+theorem Typed.weaken :
+    Typed Γ m a ->
+    Typed Γ b (.srt i) ->
+    Typed (b :: Γ) m.[shift] a.[shift] := by
+  intro tym tyb
+  apply tym.rename
+  constructor
+  . assumption
+  . exact AgreeRen.rfl tym.wf
+
+theorem Typed.eweaken :
+    Γ' = (b :: Γ) ->
+    m' = m.[shift] ->
+    a' = a.[shift] ->
+    Typed Γ m a ->
+    Typed Γ b (.srt i) ->
+    Typed Γ' m' a' := by
+  intros
+  subst_vars
+  apply Typed.weaken <;> assumption

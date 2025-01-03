@@ -49,8 +49,7 @@ theorem Step.subst : m ~> n -> m.[σ] ~> n.[σ] := by
     asimp at h
     assumption
 
-theorem Red.pi :
-  a ~>* a' -> b ~>* b' -> .pi a b ~>* .pi a' b' := by
+theorem Red.pi : a ~>* a' -> b ~>* b' -> .pi a b ~>* .pi a' b' := by
   intro ra rb
   apply (@Star.trans _ _ (Tm.pi a' b))
   . apply Star.hom _ _ ra
@@ -60,8 +59,7 @@ theorem Red.pi :
     intro x y
     apply Step.piB
 
-theorem Red.lam :
-  a ~>* a' -> m ~>* m' -> .lam a m ~>* .lam a' m' := by
+theorem Red.lam : a ~>* a' -> m ~>* m' -> .lam a m ~>* .lam a' m' := by
   intro ra rm
   apply (@Star.trans _ _ (Tm.lam a' m))
   . apply Star.hom _ _ ra
@@ -71,8 +69,7 @@ theorem Red.lam :
     intro x y
     apply Step.lamM
 
-theorem Red.app :
-  m ~>* m' -> n ~>* n' -> .app m n ~>* .app m' n' := by
+theorem Red.app : m ~>* m' -> n ~>* n' -> .app m n ~>* .app m' n' := by
   intros r1 r2
   apply (@Star.trans _ _ (Tm.app m' n))
   . apply Star.hom _ _ r1
@@ -127,8 +124,7 @@ theorem Red.compat : SRed σ τ -> m.[σ] ~>* m.[τ] := by
 
 def SConv (σ τ : Nat -> Tm) := ∀ x, σ x === τ x
 
-theorem Conv.pi :
-  a === a' -> b === b' -> .pi a b === .pi a' b' := by
+theorem Conv.pi : a === a' -> b === b' -> .pi a b === .pi a' b' := by
   intros ra rb
   apply @Conv.trans _ _ (Tm.pi a' b)
   . apply Conv.hom _ _ ra
@@ -138,8 +134,7 @@ theorem Conv.pi :
     intro x y
     apply Step.piB
 
-theorem Conv.lam :
-  a === a' -> m === m' -> .lam a m === .lam a' m' := by
+theorem Conv.lam : a === a' -> m === m' -> .lam a m === .lam a' m' := by
   intros ra rm
   apply @Conv.trans _ _ (Tm.lam a' m)
   . apply Conv.hom _ _ ra
@@ -149,8 +144,7 @@ theorem Conv.lam :
     intro x y
     apply Step.lamM
 
-theorem Conv.app :
-  m === m' -> n === n' -> .app m n === .app m' n' := by
+theorem Conv.app : m === m' -> n === n' -> .app m n === .app m' n' := by
   intros r1 r2
   apply @Conv.trans _ _ (Tm.app m' n)
   . apply Conv.hom _ _ r1
@@ -205,7 +199,7 @@ theorem Conv.subst1 : n1 === n2 -> m.[n1/] === m.[n2/] := by
   | zero => asimp; assumption
   | succ => asimp; constructor
 
-theorem PStep.refl : m ≈> m := by
+theorem PStep.rfl : m ≈> m := by
   induction m with
   | var => constructor
   | srt => constructor
@@ -219,31 +213,31 @@ theorem Step.pstep : m ~> m' -> m ≈> m' := by
   | piA =>
     constructor
     . assumption
-    . exact PStep.refl
+    . exact PStep.rfl
   | piB =>
     constructor
-    . exact PStep.refl
+    . exact PStep.rfl
     . assumption
   | lamA =>
     constructor
     . assumption
-    . exact PStep.refl
+    . exact PStep.rfl
   | lamM =>
     constructor
-    . exact PStep.refl
+    . exact PStep.rfl
     . assumption
   | appM =>
     constructor
     . assumption
-    . exact PStep.refl
+    . exact PStep.rfl
   | appN =>
     constructor
-    . exact PStep.refl
+    . exact PStep.rfl
     . assumption
   | beta =>
     constructor
-    . exact PStep.refl
-    . exact PStep.refl
+    . exact PStep.rfl
+    . exact PStep.rfl
 
 theorem PStep.red : m ≈> n -> m ~>* n := by
   intro ps
@@ -262,8 +256,8 @@ theorem PStep.red : m ≈> n -> m ~>* n := by
 theorem PStep.subst : m ≈> n -> m.[σ] ≈> n.[σ] := by
   intro ps
   induction ps generalizing σ with
-  | var => exact PStep.refl
-  | srt => exact PStep.refl
+  | var => exact PStep.rfl
+  | srt => exact PStep.rfl
   | pi sta stb iha ihb =>
     asimp; constructor
     . exact iha
@@ -284,9 +278,9 @@ theorem PStep.subst : m ≈> n -> m.[σ] ≈> n.[σ] := by
 
 def PSStep (σ τ : Nat -> Tm) : Prop := forall x, (σ x) ≈> (τ x)
 
-theorem PSStep.refl : PSStep σ σ := by
+theorem PSStep.rfl : PSStep σ σ := by
   intro x; induction x <;>
-  apply PStep.refl
+  apply PStep.rfl
 
 theorem PSStep.up : PSStep σ τ -> PSStep (up σ) (up τ) := by
   intro h x
@@ -296,11 +290,10 @@ theorem PSStep.up : PSStep σ τ -> PSStep (up σ) (up τ) := by
     asimp
     apply PStep.subst; apply h
 
-theorem PStep.compat :
-  m ≈> n -> PSStep σ τ -> m.[σ] ≈> n.[τ] := by
+theorem PStep.compat : m ≈> n -> PSStep σ τ -> m.[σ] ≈> n.[τ] := by
   intro ps; induction ps generalizing σ τ with
   | var => intro pss; apply pss
-  | srt => intro; asimp; apply PStep.refl
+  | srt => intro; asimp; apply PStep.rfl
   | pi sta stb iha ihb =>
     intro; asimp
     constructor
@@ -322,8 +315,7 @@ theorem PStep.compat :
     asimp at h
     assumption
 
-theorem PSStep.compat :
-  PSStep σ τ -> m ≈> n -> PSStep (m .: σ) (n .: τ) := by
+theorem PSStep.compat : PSStep σ τ -> m ≈> n -> PSStep (m .: σ) (n .: τ) := by
   intros pss ps x
   cases x with
   | zero => assumption
@@ -331,15 +323,14 @@ theorem PSStep.compat :
 
 theorem PStep.subst1 : n ≈> n' -> m.[n/] ≈> m.[n'/] := by
   intro ps
-  apply PStep.compat PStep.refl
-  apply PSStep.compat PSStep.refl ps
+  apply PStep.compat PStep.rfl
+  apply PSStep.compat PSStep.rfl ps
 
-theorem PStep.compat_subst1 :
-  m ≈> m' -> n ≈> n' -> m.[n/] ≈> m'.[n'/] := by
+theorem PStep.compat_subst1 : m ≈> m' -> n ≈> n' -> m.[n/] ≈> m'.[n'/] := by
   intro ps1 ps2
   apply PStep.compat
   . assumption
-  . apply PSStep.compat PSStep.refl ps2
+  . apply PSStep.compat PSStep.rfl ps2
 
 theorem PStep.diamond : Diamond PStep := by
   intros m m1 m2 ps
@@ -348,18 +339,18 @@ theorem PStep.diamond : Diamond PStep := by
     intro ps; exists m2
     constructor
     . assumption
-    . exact PStep.refl
+    . exact PStep.rfl
   | srt i =>
     intro ps; exists m2
     constructor
     . assumption
-    . exact PStep.refl
+    . exact PStep.rfl
   | pi _ _ iha ihb =>
     intro ps
     cases ps with
     | pi psa psb =>
-      have ⟨a, ⟨psa1, psa2⟩⟩ := iha psa
-      have ⟨b, ⟨psb1, psb2⟩⟩ := ihb psb
+      have ⟨a, psa1, psa2⟩ := iha psa
+      have ⟨b, psb1, psb2⟩ := ihb psb
       exists .pi a b
       constructor
       . constructor <;> assumption
@@ -368,8 +359,8 @@ theorem PStep.diamond : Diamond PStep := by
     intro ps
     cases ps with
     | lam psa psm =>
-      have ⟨a, ⟨psa1, psa2⟩⟩ := iha psa
-      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
+      have ⟨a, psa1, psa2⟩ := iha psa
+      have ⟨m, psm1, psm2⟩ := ihm psm
       exists .lam a m
       constructor
       . constructor <;> assumption
@@ -378,16 +369,16 @@ theorem PStep.diamond : Diamond PStep := by
     intro ps
     cases ps with
     | app psm psn =>
-      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
-      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      have ⟨m, psm1, psm2⟩ := ihm psm
+      have ⟨n, psn1, psn2⟩ := ihn psn
       exists .app m n
       constructor
       . constructor <;> assumption
       . constructor <;> assumption
     | beta a psm' psn' =>
       cases psm; case lam _ _ psa psm  =>
-      have ⟨_, ⟨psm1, psm2⟩⟩ := ihm (PStep.lam PStep.refl psm')
-      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn'
+      have ⟨_, psm1, psm2⟩ := ihm (PStep.lam PStep.rfl psm')
+      have ⟨n, psn1, psn2⟩ := ihn psn'
       cases psm1; case lam m _ psm1 =>
       cases psm2; case lam _ psm2 =>
       exists m.[n/]
@@ -399,22 +390,21 @@ theorem PStep.diamond : Diamond PStep := by
     cases ps with
     | app psm psn =>
       cases psm; case lam _ psm =>
-      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
-      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      have ⟨m, psm1, psm2⟩ := ihm psm
+      have ⟨n, psn1, psn2⟩ := ihn psn
       exists m.[n/]
       constructor
       . apply PStep.compat_subst1 <;> assumption
       . apply PStep.beta <;> assumption
     | beta _ psm psn =>
-      have ⟨m, ⟨psm1, psm2⟩⟩ := ihm psm
-      have ⟨n, ⟨psn1, psn2⟩⟩ := ihn psn
+      have ⟨m, psm1, psm2⟩ := ihm psm
+      have ⟨n, psn1, psn2⟩ := ihn psn
       exists m.[n/]
       constructor
       . apply PStep.compat_subst1 <;> assumption
       . apply PStep.compat_subst1 <;> assumption
 
-theorem PStep.strip :
-  m ≈> m1 -> m ~>* m2 -> ∃ m', m1 ~>* m' ∧ m2 ≈> m' := by
+theorem PStep.strip : m ≈> m1 -> m ~>* m2 -> ∃ m', m1 ~>* m' ∧ m2 ≈> m' := by
   intros p r
   induction r generalizing m1 p with
   | R =>
@@ -422,8 +412,8 @@ theorem PStep.strip :
     . apply Star.R
     . assumption
   | SE _ s1 ih =>
-    rcases ih p with ⟨m2, ⟨r, s2⟩⟩
-    rcases PStep.diamond (s1.pstep) s2 with ⟨m3, ⟨p1, p2⟩⟩
+    have ⟨m2, r, s2⟩ := ih p
+    have ⟨m3, p1, p2⟩ := PStep.diamond (s1.pstep) s2
     exists m3; constructor
     . apply Star.trans r (p2.red)
     . assumption
@@ -438,8 +428,8 @@ theorem Step.confluent : Confluent Step := by
     constructor
   | SE _ s ih =>
     intro h
-    rcases ih h with ⟨z1, ⟨s1 , s2⟩⟩
-    rcases PStep.strip (s.pstep) s1 with ⟨z2, ⟨s3, s4⟩⟩
+    have ⟨z1, s1, s2⟩ := ih h
+    have ⟨z2, s3, s4⟩ := PStep.strip (s.pstep) s1
     exists z2; constructor
     . assumption
     . apply Star.trans s2 (s4.red)
@@ -463,14 +453,14 @@ theorem Red.srt_inv : .srt i ~>* x -> x = .srt i := by
     subst ih; cases st
 
 theorem Red.pi_inv : .pi a b ~>* x ->
-  ∃ a' b', a ~>* a' ∧ b ~>* b' ∧ x = .pi a' b' := by
+    ∃ a' b', a ~>* a' ∧ b ~>* b' ∧ x = .pi a' b' := by
   intro r
   induction r with
   | R =>
     exists a, b
     repeat constructor
   | SE r st ih =>
-    have ⟨a1, ⟨b1, ⟨ra1, ⟨rb1, e⟩ ⟩⟩⟩ := ih
+    have ⟨a1, b1, ra1, rb1, e⟩ := ih
     subst e
     cases st with
     | @piA _ a2 _ ra2 =>
@@ -491,14 +481,14 @@ theorem Red.pi_inv : .pi a b ~>* x ->
       . rfl
 
 theorem Red.lam_inv : .lam a m ~>* x ->
-  ∃ a' m', a ~>* a' ∧ m ~>* m' ∧ x = .lam a' m' := by
+    ∃ a' m', a ~>* a' ∧ m ~>* m' ∧ x = .lam a' m' := by
   intro r
   induction r with
   | R =>
     exists a, m
     repeat constructor
   | SE r st ih =>
-    have ⟨a1, ⟨m1, ⟨ra1, ⟨rm1, e⟩ ⟩⟩⟩ := ih
+    have ⟨a1, m1, ra1, rm1, e⟩ := ih
     subst e
     cases st with
     | @lamA _ a2 _ ra2 =>

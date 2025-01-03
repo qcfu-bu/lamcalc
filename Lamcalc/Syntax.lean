@@ -105,7 +105,7 @@ theorem ren_subst_comp ξ σ (m : Tm) : m.[ren ξ].[σ] = m.[ξ >>> σ] := by
     . rw[<-ihn]
 
 theorem up_comp_subst_ren (σ : Var -> Tm) (ξ : Var -> Var) :
-  up σ >>> rename (upren ξ) = up (σ >>> rename ξ)  := by
+    up σ >>> rename (upren ξ) = up (σ >>> rename ξ)  := by
   funext x
   cases x with
   | zero => asimp

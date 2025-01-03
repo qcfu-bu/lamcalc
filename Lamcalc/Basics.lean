@@ -81,8 +81,7 @@ def upn {T} [Ids T] [Rename T] (n : Var) : (Var -> T) -> Var -> T :=
   (f >>> g) >>> h = f >>> (g >>> h) := by rfl
 
 @[asimp]theorem lift0 : (.+0) = id := by rfl
-@[asimp]theorem lift_scons x (f : Var -> T) (n : Var) :
-  (.+n.succ) >>> (x .: f) = (.+n) >>> f := by
+@[asimp]theorem lift_scons x (f : Var -> T) (n : Var) : (.+n.succ) >>> (x .: f) = (.+n) >>> f := by
   funext x0; simp[scons, asimp]
 
 section Definitions
@@ -105,16 +104,14 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
 @[asimp]def id_subst     := lemmas.id_subst
 @[asimp]def subst_comp   := lemmas.subst_comp
 
-@[asimp]theorem up_shift (σ : Var -> T) :
-  up σ = ids 0 .: (σ >> shift) := by
+@[asimp]theorem up_shift (σ : Var -> T) : up σ = ids 0 .: (σ >> shift) := by
   simp[up, asimp]
   funext x
   cases x with
   | zero => simp[asimp]
   | succ => simp[shift, scomp, asimp]
 
-@[asimp]theorem upren_up (ξ : Var -> Var) :
-  @ren T _ (upren ξ) = up (ren ξ) := by
+@[asimp]theorem upren_up (ξ : Var -> Var) : @ren T _ (upren ξ) = up (ren ξ) := by
   funext x
   cases x with
   | zero => simp[asimp]
@@ -130,13 +127,11 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
   | zero => simp[asimp]
   | succ => simp[scons, shift, ren, funcomp]
 
-@[asimp]theorem shift_scomp (m : T) (σ : Var -> T) :
-  shift >> (m .: σ) = σ := by
+@[asimp]theorem shift_scomp (m : T) (σ : Var -> T) : shift >> (m .: σ) = σ := by
   funext x
   simp[scomp, shift, ren, asimp]
 
-@[asimp]theorem ids0_scons (σ : Var -> T) :
-  (ids 0).[σ] .: (shift >> σ) = σ := by
+@[asimp]theorem ids0_scons (σ : Var -> T) : (ids 0).[σ] .: (shift >> σ) = σ := by
   funext x
   simp[scons]
   cases x with
@@ -147,15 +142,13 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
   funext x
   simp[scomp, funcomp, asimp]
 
-@[asimp]theorem scons_scomp m (σ τ : Var -> T) :
-  (m .: σ) >> τ = m.[τ] .: σ >> τ := by
+@[asimp]theorem scons_scomp m (σ τ : Var -> T) : (m .: σ) >> τ = m.[τ] .: σ >> τ := by
   funext x
   cases x with
   | zero => simp[scomp, funcomp, scons]
   | succ => simp[scomp, funcomp, scons]
 
-@[asimp]theorem scomp_assoc (σ τ θ : Var -> T) :
-  (σ >> τ) >> θ = σ >> (τ >> θ) := by
+@[asimp]theorem scomp_assoc (σ τ θ : Var -> T) : (σ >> τ) >> θ = σ >> (τ >> θ) := by
   funext x
   simp[scomp, funcomp, asimp]
 
