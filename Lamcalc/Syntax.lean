@@ -85,13 +85,13 @@ theorem subst_id (m : Tm) : m.[ids] = m := by
     constructor <;> assumption
 
 theorem up_comp_ren_subst {T} [Ids T] [Rename T] (ξ : Var -> Var) (σ : Var -> T) :
-  up (ξ >>> σ) = upren ξ >>> up σ := by
+  up (ξ !>> σ) = upren ξ !>> up σ := by
   funext x
   cases x with
   | zero => rfl
   | succ => asimp
 
-theorem ren_subst_comp ξ σ (m : Tm) : m.[ren ξ].[σ] = m.[ξ >>> σ] := by
+theorem ren_subst_comp ξ σ (m : Tm) : m.[ren ξ].[σ] = m.[ξ !>> σ] := by
   induction m generalizing ξ σ with
   | var => rfl
   | srt => rfl
@@ -105,17 +105,17 @@ theorem ren_subst_comp ξ σ (m : Tm) : m.[ren ξ].[σ] = m.[ξ >>> σ] := by
     . rw[<-ihn]
 
 theorem up_comp_subst_ren (σ : Var -> Tm) (ξ : Var -> Var) :
-    up σ >>> rename (upren ξ) = up (σ >>> rename ξ)  := by
+    up σ !>> rename (upren ξ) = up (σ !>> rename ξ)  := by
   funext x
   cases x with
   | zero => asimp
   | succ n =>
     asimp[rename_subst]
-    have h1 := ren_subst_comp Nat.succ (ren (upren ξ)) (σ n); asimp at h1
-    have h2 := ren_subst_comp ξ (ren Nat.succ) (σ n); asimp at h2
+    have h1 := ren_subst_comp .succ (ren (upren ξ)) (σ n); asimp at h1
+    have h2 := ren_subst_comp ξ (ren .succ) (σ n); asimp at h2
     rw[h1, h2]; rfl
 
-theorem subst_ren_comp σ ξ (m : Tm) : m.[σ].[ren ξ] = m.[σ >>> rename ξ] := by
+theorem subst_ren_comp σ ξ (m : Tm) : m.[σ].[ren ξ] = m.[σ !>> rename ξ] := by
   induction m generalizing σ ξ with
   | var => asimp[rename_subst]
   | srt => asimp
@@ -136,8 +136,8 @@ theorem up_comp (σ τ : Var -> Tm) :  up σ >> up τ = up (σ >> τ) := by
     asimp
   | succ n =>
     asimp[rename_subst]
-    have h1 := subst_ren_comp τ Nat.succ (σ n)
-    have h2 := ren_subst_comp Nat.succ (up τ) (σ n)
+    have h1 := subst_ren_comp τ .succ (σ n)
+    have h2 := ren_subst_comp .succ (up τ) (σ n)
     rw[h1, h2]
     rfl
 

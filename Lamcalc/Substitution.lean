@@ -13,7 +13,7 @@ inductive AgreeSubst : (Var -> Tm) -> Ctx -> Ctx -> Prop where
     AgreeSubst (m .: σ) (a :: Γ) Γ'
   | conv :
     a === b ->
-    Typed Γ' b.[shift].[σ] (.srt i) ->
+    Typed Γ' b.[ren .succ].[σ] (.srt i) ->
     Typed Γ b (.srt i) ->
     AgreeSubst σ (a :: Γ) Γ' ->
     AgreeSubst σ (b :: Γ) Γ'

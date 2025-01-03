@@ -10,7 +10,7 @@ inductive AgreeRen : (Var -> Var) -> Ctx -> Ctx -> Prop where
   | wk :
     Typed Γ' a (Tm.srt i) ->
     AgreeRen ξ Γ Γ' ->
-    AgreeRen (ξ >>> Nat.succ) Γ (a :: Γ')
+    AgreeRen (ξ !>> .succ) Γ (a :: Γ')
 
 theorem AgreeRen.rfl : Wf Γ -> AgreeRen id Γ Γ := by
   intro wf
@@ -31,15 +31,15 @@ theorem AgreeRen.has :
     intro h
     cases h <;> asimp
     case zero =>
-      have : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
+      have : a.[@ren Tm _ ξ >> ren .succ] = a.[ren ξ].[ren .succ] := by asimp
       rw[this]; constructor
     case succ x a hs =>
-      have : a.[@ren Tm _ ξ >> shift] = a.[ren ξ].[shift] := by asimp
+      have : a.[@ren Tm _ ξ >> ren .succ] = a.[ren ξ].[ren .succ] := by asimp
       rw[this]; constructor
       apply ih; assumption
   | @wk _ a _ ξ _ _ _ ih =>
     intro h; asimp
-    have : a.[@ren Tm _ (ξ >>> Nat.succ)] = a.[ren ξ].[shift] := by asimp; rfl
+    have : a.[@ren Tm _ (ξ !>> .succ)] = a.[ren ξ].[ren .succ] := by asimp; rfl
     rw[this]; constructor
     apply ih; assumption
 
@@ -142,7 +142,7 @@ theorem Wf.has_typed : Wf Γ -> Has Γ x a -> ∃ i, Typed Γ a (.srt i) := by
 theorem Typed.weaken :
     Typed Γ m a ->
     Typed Γ b (.srt i) ->
-    Typed (b :: Γ) m.[shift] a.[shift] := by
+    Typed (b :: Γ) m.[ren .succ] a.[ren .succ] := by
   intro tym tyb
   apply tym.rename
   constructor
@@ -151,8 +151,8 @@ theorem Typed.weaken :
 
 theorem Typed.eweaken :
     Γ' = (b :: Γ) ->
-    m' = m.[shift] ->
-    a' = a.[shift] ->
+    m' = m.[ren .succ] ->
+    a' = a.[ren .succ] ->
     Typed Γ m a ->
     Typed Γ b (.srt i) ->
     Typed Γ' m' a' := by
