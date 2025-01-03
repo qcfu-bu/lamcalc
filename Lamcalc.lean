@@ -8,3 +8,4 @@ import Lamcalc.Semantics
 import Lamcalc.Confluence
 import Lamcalc.Context
 import Lamcalc.Typed
+import Lamcalc.Weakening
