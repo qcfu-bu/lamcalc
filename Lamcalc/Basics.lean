@@ -149,15 +149,14 @@ variable {T : Type} [Ids T] [Rename T] [Subst T] [lemmas: SubstLemmas T]
   funext x
   simp[scomp, funcomp, asimp]
 
-syntax "asimp" ("[" (ident),+ "]")? ("at" ident)? : tactic
+open Lean Parser Tactic in
+syntax "asimp"
+  (" [" withoutPosition((simpStar <|> simpErase <|> simpLemma),*,?) "]")? (location)? : tactic
+
 macro_rules
-| `(tactic| asimp) =>
-  `(tactic| simp[asimp]; repeat rw [<-up_shift])
-| `(tactic| asimp[$[$x:ident],*]) =>
-  `(tactic| simp[$[$x:ident],*, asimp]; repeat rw [<-up_shift])
-| `(tactic| asimp at $h:ident) =>
-  `(tactic| simp[asimp] at $h:ident; repeat rw [<-up_shift] at $h:ident)
-| `(tactic| asimp[$[$x:ident],*] at $h:ident) =>
-  `(tactic| simp[$[$x:ident],*, asimp] at $h:ident; repeat rw [<-up_shift] at $h:ident)
+| `(tactic| asimp $[$loc]?) =>
+  `(tactic| simp[asimp] $[$loc]?; repeat rw [<-up_shift] $[$loc]?)
+| `(tactic| asimp[$xs,*] $[$loc]?) =>
+  `(tactic| simp[$xs,*, asimp] $[$loc]?; repeat rw [<-up_shift] $[$loc]?)
 
 end Lemmas
