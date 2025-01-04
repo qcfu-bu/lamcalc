@@ -78,8 +78,7 @@ theorem Typed.validity : Typed Γ m a -> ∃ i, Typed Γ a (.srt i) := by
     exists i
 
 theorem Typed.lam_inv :
-    Typed Γ (.lam a m) (.pi a' b) ->
-    Typed (a' :: Γ) m b := by
+    Typed Γ (.lam a m) (.pi a' b) -> Typed (a' :: Γ) m b := by
   intro ty
   have ⟨_, ty⟩ := ty.validity
   have ⟨_, _, ty, _⟩ := ty.pi_inv

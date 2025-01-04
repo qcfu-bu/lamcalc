@@ -10,3 +10,5 @@ import Lamcalc.Context
 import Lamcalc.Typed
 import Lamcalc.Renaming
 import Lamcalc.Substitution
+import Lamcalc.Inversion
+import Lamcalc.Soundness
