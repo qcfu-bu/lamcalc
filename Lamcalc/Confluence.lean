@@ -508,6 +508,23 @@ theorem Red.lam_inv : .lam a m ~>* x ->
         apply rm2
       . rfl
 
+theorem Conv.srt_inj : .srt i === .srt j -> i = j := by
+  intro eq
+  have ⟨x, eq1, eq2⟩ := Step.cr eq
+  have e1 := Red.srt_inv eq1
+  have e2 := Red.srt_inv eq2
+  cases e1; cases e2; rfl
+
+theorem Conv.pi_inj : .pi a1 b1 === .pi a2 b2 -> a1 === a2 ∧ b1 === b2 := by
+  intro eq
+  have ⟨x, eq1, eq2⟩ := Step.cr eq
+  have ⟨a1', b1', sta1, stb1, e1⟩ := Red.pi_inv eq1
+  have ⟨a2', b2', sta2, stb2, e2⟩ := Red.pi_inv eq2
+  subst_vars; cases e2
+  constructor
+  . apply Conv.join <;> assumption
+  . apply Conv.join <;> assumption
+
 namespace Tactic
 open Lean Elab Meta
 

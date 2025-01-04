@@ -11,9 +11,9 @@ inductive Typed : Ctx -> Tm -> Tm -> Prop where
     Has Γ x a ->
     Typed Γ (.var x) a
   | pi :
-    Typed Γ a (Tm.srt i1) ->
-    Typed (a :: Γ) b (Tm.srt i2) ->
-    Typed Γ (Tm.pi a b) (Tm.srt (max i1 i2))
+    Typed Γ a (Tm.srt i) ->
+    Typed (a :: Γ) b (Tm.srt j) ->
+    Typed Γ (Tm.pi a b) (Tm.srt (max i j))
   | lam :
     Typed Γ a (Tm.srt i) ->
     Typed (a :: Γ) m b ->

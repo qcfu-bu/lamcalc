@@ -11,13 +11,13 @@ attribute [reducible] Pred Rel
 variable {T : Type} (e : Rel T)
 
 inductive Star (x : T) : T -> Prop where
-  | R : Star x x
-  | SE {y z} : Star x y -> e y z -> Star x z
+  | R  : Star x x
+  | SE : Star x y -> e y z -> Star x z
 
 inductive Conv (x : T) : T -> Prop where
-  | R : Conv x x
-  | SE  {y z} : Conv x y -> e y z -> Conv x z
-  | SEi {y z} : Conv x y -> e z y -> Conv x z
+  | R   : Conv x x
+  | SE  : Conv x y -> e y z -> Conv x z
+  | SEi : Conv x y -> e z y -> Conv x z
 
 def Com (R S : Rel T) := ∀ {x y z}, R x y -> S x z -> ∃ u, S y u ∧ R z u
 def Joinable (R : Rel T) x y := ∃ z, R x z ∧ R y z
@@ -146,13 +146,13 @@ theorem Confluent.cr : Confluent e <-> CR e := by
       exists x
       constructor <;> constructor
     | @SE y z _ rel ih =>
-      rcases ih with ⟨u, ⟨h2, h3⟩⟩
-      rcases h1 h3 (Star.singleton rel) with ⟨v, ⟨h4, h5⟩⟩
+      rcases ih with ⟨u, h2, h3⟩
+      rcases h1 h3 (Star.singleton rel) with ⟨v, h4, h5⟩
       exists v; constructor
       . apply Star.trans h2 h4
       . apply h5
     | @SEi y z _ rel ih =>
-      rcases ih with ⟨u, ⟨h2, h3⟩⟩
+      rcases ih with ⟨u, h2, h3⟩
       exists u; constructor
       . apply h2
       . apply Star.ES rel h3
@@ -173,8 +173,8 @@ theorem Com.strip {e1 e2 : Rel T} : Com e1 e2 -> Com (Star e2) e1 := by
     . constructor
   | SE _ rel2 ih =>
     intro h2
-    rcases ih h2 with ⟨u, ⟨rel1, h3⟩⟩
-    rcases h1 rel1 rel2 with ⟨v, ⟨rel2, rel1⟩⟩
+    rcases ih h2 with ⟨u, rel1, h3⟩
+    rcases h1 rel1 rel2 with ⟨v, rel2, rel1⟩
     exists v; constructor
     . assumption
     . apply Star.SE h3 rel2
