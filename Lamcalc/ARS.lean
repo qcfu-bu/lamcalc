@@ -11,13 +11,13 @@ attribute [reducible] Pred Rel
 variable {T : Type} (e : Rel T)
 
 inductive Star (x : T) : T -> Prop where
-| R : Star x x
-| SE {y z} : Star x y -> e y z -> Star x z
+  | R : Star x x
+  | SE {y z} : Star x y -> e y z -> Star x z
 
 inductive Conv (x : T) : T -> Prop where
-| R : Conv x x
-| SE  {y z} : Conv x y -> e y z -> Conv x z
-| SEi {y z} : Conv x y -> e z y -> Conv x z
+  | R : Conv x x
+  | SE  {y z} : Conv x y -> e y z -> Conv x z
+  | SEi {y z} : Conv x y -> e z y -> Conv x z
 
 def Com (R S : Rel T) := ∀ {x y z}, R x y -> S x z -> ∃ u, S y u ∧ R z u
 def Joinable (R : Rel T) x y := ∃ z, R x z ∧ R y z
@@ -54,16 +54,16 @@ theorem Star.Conv {x y} : Star e x y -> Conv e x y := by
   | SE _ rel ih => apply Conv.SE ih rel
 
 theorem Star.img {T1 T2} {f : T1 -> T2} {e1 e2} :
-  (∀ {x y}, e1 x y -> Star e2 (f x) (f y)) ->
-  (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
+    (∀ {x y}, e1 x y -> Star e2 (f x) (f y)) ->
+    (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
   intros h1 x y h2
   induction h2 with
   | R => constructor
   | @SE y z _ rel ih => apply Star.trans ih (h1 rel)
 
 theorem Star.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
-  (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
-  (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
+    (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
+    (∀ {x y}, Star e1 x y -> Star e2 (f x) (f y)) := by
   intro h; apply Star.img
   intros x y h0
   specialize h h0
@@ -118,8 +118,8 @@ theorem Conv.join {x y z} : Star e x y -> Star e z y -> Conv e x z := by
   apply Star.Conv h2
 
 theorem Conv.img {T1 T2} {f : T1 -> T2} {e1 e2} :
-  (∀ {x y}, e1 x y -> Conv e2 (f x) (f y)) ->
-  (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
+    (∀ {x y}, e1 x y -> Conv e2 (f x) (f y)) ->
+    (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
   intros h1 x y h2
   induction h2 with
   | R => constructor
@@ -131,8 +131,8 @@ theorem Conv.img {T1 T2} {f : T1 -> T2} {e1 e2} :
     apply h1 rel
 
 theorem Conv.hom {T1 T2} (f : T1 -> T2) {e1 e2} :
-  (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
-  (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
+    (∀ {x y}, e1 x y -> e2 (f x) (f y)) ->
+    (∀ {x y}, Conv e1 x y -> Conv e2 (f x) (f y)) := by
   intro h; apply Conv.img
   intros x y h0
   specialize h h0

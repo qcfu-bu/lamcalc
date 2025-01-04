@@ -14,7 +14,7 @@ inductive AgreeRen : (Var -> Var) -> Ctx -> Ctx -> Prop where
 
 theorem AgreeRen.rfl : Wf Γ -> AgreeRen id Γ Γ := by
   intro wf
-  induction wf using Wf.rec (motive_1 := fun Γ _ _ _ => True)
+  induction wf
   all_goals try trivial
   case nil => constructor
   case cons Γ a i ty ih _ =>
@@ -118,7 +118,7 @@ theorem Typed.renaming :
 
 theorem Wf.has_typed : Wf Γ -> Has Γ x a -> ∃ i, Typed Γ a (.srt i) := by
   intro wf
-  induction wf using Wf.rec (motive_1 := fun _ _ _ _ => True)
+  induction wf
   generalizing x a
   all_goals try trivial
   case nil => intro h; cases h

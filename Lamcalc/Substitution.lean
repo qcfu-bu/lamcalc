@@ -20,7 +20,7 @@ inductive AgreeSubst : (Var -> Tm) -> Ctx -> Ctx -> Prop where
 
 theorem AgreeSubst.rfl : Wf Γ -> AgreeSubst ids Γ Γ := by
   intro wf
-  induction wf using Wf.rec (motive_1 := fun _ _ _  _ => True)
+  induction wf
   all_goals try trivial
   case nil =>
     constructor

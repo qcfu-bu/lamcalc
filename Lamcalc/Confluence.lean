@@ -3,26 +3,26 @@ import Lamcalc.Semantics
 open ARS
 
 inductive PStep : Tm -> Tm -> Prop where
-| var x :
-  PStep (ids x) (ids x)
-| srt i :
-  PStep (.srt i) (.srt i)
-| pi {a a' b b'} :
-  PStep a a' ->
-  PStep b b' ->
-  PStep (.pi a b) (.pi a' b')
-| lam {a a' m m'} :
-  PStep a a' ->
-  PStep m m' ->
-  PStep (.lam a m) (.lam a' m')
-| app {m m' n n'} :
-  PStep m m' ->
-  PStep n n' ->
-  PStep (.app m n) (.app m' n')
-| beta a {m m' n n'} :
-  PStep m m' ->
-  PStep n n' ->
-  PStep (.app (.lam a m) n) (m'.[n'/])
+  | var x :
+    PStep (ids x) (ids x)
+  | srt i :
+    PStep (.srt i) (.srt i)
+  | pi {a a' b b'} :
+    PStep a a' ->
+    PStep b b' ->
+    PStep (.pi a b) (.pi a' b')
+  | lam {a a' m m'} :
+    PStep a a' ->
+    PStep m m' ->
+    PStep (.lam a m) (.lam a' m')
+  | app {m m' n n'} :
+    PStep m m' ->
+    PStep n n' ->
+    PStep (.app m n) (.app m' n')
+  | beta a {m m' n n'} :
+    PStep m m' ->
+    PStep n n' ->
+    PStep (.app (.lam a m) n) (m'.[n'/])
 
 infix:50 " ≈> " => PStep
 

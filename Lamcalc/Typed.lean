@@ -36,7 +36,17 @@ inductive Wf : Ctx -> Prop  where
     Wf (a :: Γ)
 end
 
+-- Register non-mutual recursor as default.
+@[induction_eliminator]
+def Typed.rec_non_mutual {motive : ∀ Γ m a, Typed Γ m a -> Prop} :=
+  Typed.rec (motive_1 := motive) (motive_2 := fun _ _ => True)
+
+-- Register non-mutual recursor as default.
+@[induction_eliminator]
+def Wf.rec_non_mutual {motive : ∀ Γ, Wf Γ -> Prop} :=
+  Wf.rec (motive_1 := fun _ _ _ _ => True) (motive_2 := motive)
+
 theorem Typed.wf : Typed Γ m a -> Wf Γ  := by
   intro h
-  induction h using Typed.rec (motive_2 := fun _ _ => True)
+  induction h
   all_goals trivial
